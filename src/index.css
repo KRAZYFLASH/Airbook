@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+/* index.css */
+.clip-hero-shape {
+  clip-path: ellipse(120% 100% at 100% 0%);
+}
+
+/* Sembunyikan ikon "reveal/clear" bawaan browser */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Safari/iOS – tombol auto-fill/credentials */
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-contacts-auto-fill-button {
+  visibility: hidden;
+  display: none;
+  pointer-events: none;
+}

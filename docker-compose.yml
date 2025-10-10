@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: airbook_postgres
+    environment:
+      POSTGRES_DB: airbook_db
+      POSTGRES_USER: airbook_user
+      POSTGRES_PASSWORD: airbook_password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - airbook_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airbook_user -d airbook_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional: PgAdmin untuk management database
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: airbook_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@airbook.local
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "8080:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - airbook_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  airbook_network:
+    driver: bridge
