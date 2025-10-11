@@ -1,9 +1,9 @@
 import React from 'react'
 
-const Destination = () => {
+const Destination = (): React.ReactElement => {
   return (
     <div>
-        <p>Destination Page</p>
+      <p>Destination Page</p>
     </div>
   )
 }

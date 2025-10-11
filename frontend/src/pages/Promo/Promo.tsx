@@ -1,9 +1,9 @@
 import React from 'react'
 
-const Promo = () => {
+const Promo = (): React.ReactElement => {
   return (
     <div>
-        <p>Promo Page</p>
+      <p>Promo Page</p>
     </div>
   )
 }

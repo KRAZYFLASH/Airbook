@@ -6,18 +6,14 @@ import {
   Plane,
   TicketPercent,
   Star,
-  ChevronDown,
-  Globe,
   MapPin,
-  Shield,
   HelpCircle,
-  LogIn,
 } from "lucide-react";
 
 // Single-file demo homepage for an airline-only booking app.
 // TailwindCSS required. Paste this component into your React app and render <AirBookHome />.
 
-export default function AirBookHome() {
+export default function AirBookHome(): React.ReactElement {
   return (
     <div className="min-h-screen bg-sky-50 text-slate-800">
 
@@ -67,14 +63,13 @@ function SearchForm() {
   const [from, setFrom] = useState("CGK - Soekarno-Hatta");
   const [to, setTo] = useState("DPS - Bali Ngurah Rai");
   const [depart, setDepart] = useState(today);
-  const [returnDate, setReturnDate] = useState("");
-  const [pax, setPax] = useState(1);
+  const [returnDate, setReturnDate] = useState<string>("");
+  const [pax, setPax] = useState<number>(1);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     alert(
-      `Cari: ${trip}\nFrom: ${from}\nTo: ${to}\nDepart: ${depart}\nReturn: ${
-        returnDate || "-"
+      `Cari: ${trip}\nFrom: ${from}\nTo: ${to}\nDepart: ${depart}\nReturn: ${returnDate || "-"
       }\nPenumpang: ${pax}`
     );
   };
@@ -84,21 +79,19 @@ function SearchForm() {
       {/* Trip type */}
       <div className="flex items-center gap-2 text-sm">
         <label
-          className={`px-3 py-1.5 rounded-full border ${
-            trip === "oneway"
+          className={`px-3 py-1.5 rounded-full border ${trip === "oneway"
               ? "bg-blue-600 text-white border-blue-600"
               : "border-slate-300 text-slate-700"
-          }`}
+            }`}
           onClick={() => setTrip("oneway")}
         >
           Sekali Jalan
         </label>
         <label
-          className={`px-3 py-1.5 rounded-full border ${
-            trip === "round"
+          className={`px-3 py-1.5 rounded-full border ${trip === "round"
               ? "bg-blue-600 text-white border-blue-600"
               : "border-slate-300 text-slate-700"
-          }`}
+            }`}
           onClick={() => setTrip("round")}
         >
           Pulang-Pergi
@@ -174,7 +167,14 @@ function SearchForm() {
   );
 }
 
-function Field({ label, icon, children, disabled }) {
+interface FieldProps {
+  label: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  disabled?: boolean;
+}
+
+function Field({ label, icon, children, disabled = false }: FieldProps): React.ReactElement {
   return (
     <label className={`group grid gap-1 ${disabled ? "opacity-60" : ""}`}>
       <span className="text-xs font-medium text-slate-500">{label}</span>

@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react";
 
-export default function LoginFullBg() {
-  const [email, setEmail] = useState("");
-  const [pw, setPw] = useState("");
-  const [show, setShow] = useState(false);
+export default function LoginFullBg(): React.ReactElement {
+  const [email, setEmail] = useState<string>("");
+  const [pw, setPw] = useState<string>("");
+  const [show, setShow] = useState<boolean>(false);
 
-  const onSubmit = (e) => {
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     console.log({ email, pw });
   };
@@ -120,7 +120,11 @@ export default function LoginFullBg() {
   );
 }
 
-function SSOButton({ icon }) {
+interface SSOButtonProps {
+  icon: string;
+}
+
+function SSOButton({ icon }: SSOButtonProps): React.ReactElement {
   return (
     <button
       type="button"

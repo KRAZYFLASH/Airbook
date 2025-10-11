@@ -1,6 +1,14 @@
-// src/pages/SignupClean.jsx
+// src/pages/SignupClean.tsx
 import React, { useMemo, useState } from "react";
 import { User, Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react";
+
+interface FieldProps {
+  icon: React.ReactNode;
+  right?: React.ReactNode;
+  children: React.ReactNode;
+  invalid?: boolean;
+  className?: string;
+}
 
 function Field({
   icon,
@@ -8,7 +16,7 @@ function Field({
   children,
   invalid = false,
   className = "",
-}) {
+}: FieldProps): React.ReactElement {
   return (
     <div
       className={[
@@ -25,9 +33,9 @@ function Field({
   );
 }
 
-export default function SignupClean() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+export default function SignupClean(): React.ReactElement {
+  const [name, setName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
   const [pw, setPw] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -44,7 +52,7 @@ export default function SignupClean() {
     return Math.min(s, 4);
   }, [pw]);
 
-  const onSubmit = (e) => {
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     if (!accept) return;
     // TODO: panggil API
@@ -104,49 +112,49 @@ export default function SignupClean() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                <Field
-  icon={<Lock size={18} />}
-  right={
-    <button
-      type="button"
-      onClick={() => setShowPw((s) => !s)}
-      className="text-slate-500 hover:text-slate-700"
-      aria-label={showPw ? "Hide password" : "Show password"}
-    >
-      {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
-    </button>
-  }
->
-  <input
-    type={showPw ? "text" : "password"}
-    value={pw}
-    onChange={(e) => setPw(e.target.value)}
-    placeholder="Kata sandi"
-    className="flex-1 bg-transparent outline-none placeholder:text-slate-400 text-slate-700 appearance-none pr-10"
-  />
-</Field>
+              <Field
+                icon={<Lock size={18} />}
+                right={
+                  <button
+                    type="button"
+                    onClick={() => setShowPw((s) => !s)}
+                    className="text-slate-500 hover:text-slate-700"
+                    aria-label={showPw ? "Hide password" : "Show password"}
+                  >
+                    {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                }
+              >
+                <input
+                  type={showPw ? "text" : "password"}
+                  value={pw}
+                  onChange={(e) => setPw(e.target.value)}
+                  placeholder="Kata sandi"
+                  className="flex-1 bg-transparent outline-none placeholder:text-slate-400 text-slate-700 appearance-none pr-10"
+                />
+              </Field>
 
-<Field
-  icon={<Lock size={18} />}
-  right={
-    <button
-      type="button"
-      onClick={() => setShowConfirm((s) => !s)}
-      className="text-slate-500 hover:text-slate-700"
-      aria-label={showConfirm ? "Hide password" : "Show password"}
-    >
-      {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
-    </button>
-  }
->
-  <input
-    type={showConfirm ? "text" : "password"}
-    value={confirm}
-    onChange={(e) => setConfirm(e.target.value)}
-    placeholder="Konfirmasi kata sandi"
-    className="flex-1 bg-transparent outline-none placeholder:text-slate-400 text-slate-700 appearance-none pr-10"
-  />
-</Field>
+              <Field
+                icon={<Lock size={18} />}
+                right={
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm((s) => !s)}
+                    className="text-slate-500 hover:text-slate-700"
+                    aria-label={showConfirm ? "Hide password" : "Show password"}
+                  >
+                    {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                }
+              >
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  placeholder="Konfirmasi kata sandi"
+                  className="flex-1 bg-transparent outline-none placeholder:text-slate-400 text-slate-700 appearance-none pr-10"
+                />
+              </Field>
 
             </div>
 
@@ -154,14 +162,13 @@ export default function SignupClean() {
             <div className="px-1">
               <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
                 <div
-                  className={`h-full transition-all ${
-                    ["bg-red-500","bg-orange-500","bg-yellow-500","bg-green-500","bg-blue-600"][strength]
-                  }`}
+                  className={`h-full transition-all ${["bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-green-500", "bg-blue-600"][strength]
+                    }`}
                   style={{ width: `${(strength + 1) * 20}%` }}
                 />
               </div>
               <div className="text-xs text-slate-500 mt-1">
-                {["Lemah","Cukup","Baik","Kuat","Sangat Kuat"][strength]}
+                {["Lemah", "Cukup", "Baik", "Kuat", "Sangat Kuat"][strength]}
               </div>
             </div>
 
@@ -218,7 +225,11 @@ export default function SignupClean() {
   );
 }
 
-function SSOButton({ icon }) {
+interface SSOButtonProps {
+  icon: string;
+}
+
+function SSOButton({ icon }: SSOButtonProps): React.ReactElement {
   return (
     <button
       type="button"

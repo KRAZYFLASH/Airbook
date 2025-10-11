@@ -1,9 +1,9 @@
 import React from 'react'
 
-const Help = () => {
+const Help = (): React.ReactElement => {
   return (
     <div>
-        <p>Help Page</p>
+      <p>Help Page</p>
     </div>
   )
 }
