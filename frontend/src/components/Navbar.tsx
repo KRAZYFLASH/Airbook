@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { Plane, Globe, LogIn, ChevronDown } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
 
 const Navbar = (): React.ReactElement => {
+  const navigate = useNavigate();
   const [open, setOpen] = useState<boolean>(false);
   return (
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200">
@@ -17,17 +19,17 @@ const Navbar = (): React.ReactElement => {
 
           {/* Desktop menu */}
           <nav className='hidden md:flex items-center gap-7 font-medium text-slate-700'>
-            <a className="hover:text-blue-700 transition" href="/">Home</a>
-            <a className="hover:text-blue-700 transition" href="/promo">Promo</a>
-            <a className="hover:text-blue-700 transition" href="/combo">Destination</a>
-            <a className="hover:text-blue-700 transition" href="/help">Help</a>
+            <NavLink className="hover:text-blue-700 transition" to="/">Home</NavLink>
+            <NavLink className="hover:text-blue-700 transition" to="/promo">Promo</NavLink>
+            <NavLink className="hover:text-blue-700 transition" to="/destination">Destination</NavLink>
+            <NavLink className="hover:text-blue-700 transition" to="/help">Help</NavLink>
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
             <button className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-sm">
               <Globe size={16} /> ID / Rp
             </button>
-            <button className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 text-sm">
+            <button onClick={() => {navigate('/login')}} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 text-sm cursor-pointer">
               <LogIn size={16} /> Login / Daftar
             </button>
           </div>
@@ -58,7 +60,7 @@ const Navbar = (): React.ReactElement => {
               <button className="flex-1 px-4 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-sm">
                 ID / Rp
               </button>
-              <button className="flex-1 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 text-sm">
+              <button onClick={() => navigate('/login')} className="flex-1 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 text-sm cursor-pointer">
                 Login / Daftar
               </button>
             </div>

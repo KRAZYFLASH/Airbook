@@ -52,11 +52,52 @@ export default function SignupClean(): React.ReactElement {
     return Math.min(s, 4);
   }, [pw]);
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    if (!accept) return;
-    // TODO: panggil API
-    console.log({ name, email, pw });
+    if (!accept) {
+      alert("Please accept the terms and conditions");
+      return;
+    }
+
+    if (pw !== confirm) {
+      alert("Passwords do not match");
+      return;
+    }
+
+    try {
+      console.log("Sending signup request:", { name, email, password: pw });
+
+      const response = await fetch('http://localhost:3001/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password: pw
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert(`Signup successful! Welcome ${data.user?.name || name}! You can now login.`);
+        console.log('Signup success:', data);
+        // Reset form on success
+        setName("");
+        setEmail("");
+        setPw("");
+        setConfirm("");
+        setAccept(false);
+      } else {
+        alert(`Signup failed: ${data.message || 'Unknown error'}`);
+        console.error('Signup error:', data);
+      }
+    } catch (error) {
+      console.error('Network error:', error);
+      alert('Network error. Please make sure the backend server is running on port 3001.');
+    }
   };
 
   return (

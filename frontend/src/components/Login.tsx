@@ -6,9 +6,42 @@ export default function LoginFullBg(): React.ReactElement {
   const [pw, setPw] = useState<string>("");
   const [show, setShow] = useState<boolean>(false);
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    console.log({ email, pw });
+
+    try {
+      console.log("Sending login request:", { email, password: pw });
+
+      const response = await fetch('http://localhost:3001/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password: pw
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert(`Login successful! Welcome ${data.user?.name || 'User'}`);
+        console.log('Login success:', data);
+        // TODO: Store token and redirect
+        localStorage.setItem('token', data.token);
+      } else {
+        alert(`Login failed: ${data.message || 'Unknown error'}`);
+        console.error('Login error:', data);
+      }
+    } catch (error) {
+      console.error('Network error:', error);
+      alert('Network error. Please make sure the backend server is running on port 3001.');
+    }
+
+    // Reset form
+    setEmail("");
+    setPw("");
   };
 
   return (
