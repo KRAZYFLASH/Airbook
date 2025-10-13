@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import { authRoutes } from "./modules/auth";
+import destinationRoutes from "./modules/destination/destination.routes";
+import { bookingRoutes } from "./modules/User/booking";
 import { requestLogger } from "./common/middleware";
 
 const app = express();
@@ -18,6 +20,8 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // API Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/destinations", destinationRoutes);
+app.use("/api/bookings", bookingRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

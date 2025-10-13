@@ -8,22 +8,25 @@ import Help from './pages/Help/Help'
 import Login from './components/Login'
 import Signup from './components/Signup'
 import MainLayout from './components/MainLayout'
+import { AuthProvider } from './contexts/AuthContext'
 
 const App: React.FC = () => {
   return (
-    <Routes>
-      {/* Semua route dengan Navbar */}
-      <Route element={<MainLayout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/promo" element={<Promo />} />
-        <Route path="/destination" element={<Destination />} />
-        <Route path="/help" element={<Help />} />
-      </Route>
+    <AuthProvider>
+      <Routes>
+        {/* Semua route dengan Navbar */}
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/promo" element={<Promo />} />
+          <Route path="/destination" element={<Destination />} />
+          <Route path="/help" element={<Help />} />
+        </Route>
 
-      {/* Route tanpa Navbar */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-    </Routes>
+        {/* Route tanpa Navbar */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+      </Routes>
+    </AuthProvider>
   )
 }
 
