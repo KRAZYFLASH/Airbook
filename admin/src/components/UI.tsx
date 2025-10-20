@@ -38,25 +38,43 @@ export function EmptyRow({ colSpan, message }: { colSpan: number; message: strin
 }
 
 // Pagination Component
-export function Pagination({ page, pages, size, onPage, onSize }: { page: number; pages: number; size: number; onPage: (n: number) => void; onSize: (n: number) => void; }) {
+export function Pagination({
+  page,
+  pages,
+  size,
+  total,
+  onPage,
+  onSize
+}: {
+  page: number;
+  pages: number;
+  size: number;
+  total?: number;
+  onPage: (n: number) => void;
+  onSize: (n: number) => void;
+}) {
   const pageNumbers = Array.from({ length: Math.min(5, pages) }, (_, i) => {
     const start = Math.max(1, Math.min(page - 2, pages - 4));
     return start + i;
   }).filter(p => p <= pages);
 
+  const totalRecords = total ?? pages * size;
+  const startRecord = (page - 1) * size + 1;
+  const endRecord = Math.min(page * size, totalRecords);
+
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
-      <div className="flex items-center gap-4">
-        <div className="text-sm text-slate-600 dark:text-slate-400">
-          Showing {(page - 1) * size + 1} to {Math.min(page * size, pages * size)} of {pages * size} results
+    <div className="flex flex-col lg:flex-row items-center justify-between gap-3 lg:gap-4 mt-4 lg:mt-6">
+      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-left">
+        <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+          Showing {startRecord} to {endRecord} of {totalRecords} results
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm text-slate-600 dark:text-slate-400">Show:</span>
+          <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">Show:</span>
           <select
             value={size}
             onChange={(e) => onSize(Number(e.target.value))}
-            className="input py-1 px-2 h-8 text-sm"
+            className="border border-gray-300 rounded px-2 py-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent"
           >
             <option value={5}>5</option>
             <option value={8}>8</option>
@@ -66,11 +84,12 @@ export function Pagination({ page, pages, size, onPage, onSize }: { page: number
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
+        {/* Hide first/last buttons on mobile */}
         <button
           onClick={() => onPage(1)}
           disabled={page === 1}
-          className="p-2 rounded-lg border border-slate-200/60 dark:border-slate-700/60 bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-800/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          className="hidden sm:block p-2 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
           title="First page"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -81,7 +100,7 @@ export function Pagination({ page, pages, size, onPage, onSize }: { page: number
         <button
           onClick={() => onPage(page - 1)}
           disabled={page === 1}
-          className="p-2 rounded-lg border border-slate-200/60 dark:border-slate-700/60 bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-800/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
           title="Previous page"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,15 +108,16 @@ export function Pagination({ page, pages, size, onPage, onSize }: { page: number
           </svg>
         </button>
 
+        {/* Show fewer page numbers on mobile */}
         {pageNumbers.map(p => (
           <button
             key={p}
             onClick={() => onPage(p)}
             className={clsx(
-              "px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+              "w-8 h-8 text-xs sm:text-sm rounded transition-all duration-200",
               p === page
-                ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
-                : "border border-slate-200/60 dark:border-slate-700/60 bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-800/80"
+                ? "bg-blue-600 text-white"
+                : "text-gray-600 hover:bg-gray-100"
             )}
           >
             {p}
@@ -107,7 +127,7 @@ export function Pagination({ page, pages, size, onPage, onSize }: { page: number
         <button
           onClick={() => onPage(page + 1)}
           disabled={page === pages}
-          className="p-2 rounded-lg border border-slate-200/60 dark:border-slate-700/60 bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-800/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
           title="Next page"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,7 +138,7 @@ export function Pagination({ page, pages, size, onPage, onSize }: { page: number
         <button
           onClick={() => onPage(pages)}
           disabled={page === pages}
-          className="p-2 rounded-lg border border-slate-200/60 dark:border-slate-700/60 bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-800/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          className="hidden sm:block p-2 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
           title="Last page"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,13 +159,13 @@ export function Modal({ title, children, onClose }: { title?: string; children?:
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
-      <div className="w-full max-w-3xl rounded-2xl border border-white/70 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 p-4 shadow-2xl">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-2 sm:p-4">
+      <div className="w-full max-w-sm sm:max-w-md lg:max-w-2xl xl:max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl sm:rounded-2xl border border-white/70 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 p-3 sm:p-4 lg:p-6 shadow-2xl">
         {title && (
-          <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-200/60 dark:border-slate-700/60">
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center justify-between mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-slate-200/60 dark:border-slate-700/60">
+            <h2 className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+            <button onClick={onClose} className="p-1.5 sm:p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>

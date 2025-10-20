@@ -8,6 +8,8 @@ import { flightScheduleRoutes } from "./modules/flight-schedule";
 import { promotionRoutes } from "./modules/promotion";
 import { airportRoutes } from "./modules/airports";
 import databaseAirportRoutes from "./modules/airports/database-airport.routes";
+import countriesRoutes from "./modules/countries/countries.routes";
+import citiesRoutes from "./modules/cities/cities.routes";
 import { requestLogger } from "./common/middleware";
 
 const app = express();
@@ -43,6 +45,11 @@ app.use("/api/flight-schedules", flightScheduleRoutes);
 app.use("/api/promotions", promotionRoutes);
 app.use("/api/airports", airportRoutes);
 app.use("/api/db-airports", databaseAirportRoutes);
+// Debug: Countries and Cities Routes
+console.log("🌍 Mounting countries routes at /api");
+app.use("/api", countriesRoutes);
+console.log("🏙️ Mounting cities routes at /api");
+app.use("/api", citiesRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

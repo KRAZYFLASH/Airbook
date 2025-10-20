@@ -56,6 +56,7 @@ const AirportManagement = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
     const [totalRecords, setTotalRecords] = useState(0);
+    const [pageSize, setPageSize] = useState(8);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCountry, setSelectedCountry] = useState('');
     const [showActiveOnly, setShowActiveOnly] = useState(true); // Changed to true to show active airports by default
@@ -83,7 +84,7 @@ const AirportManagement = () => {
         try {
             const params = new URLSearchParams({
                 page: page.toString(),
-                limit: '10',
+                limit: pageSize.toString(),
                 ...(searchQuery && { search: searchQuery }),
                 ...(selectedCountry && { country: selectedCountry })
             });
@@ -112,7 +113,7 @@ const AirportManagement = () => {
         } finally {
             setLoading(false);
         }
-    }, [searchQuery, selectedCountry, showActiveOnly]);
+    }, [searchQuery, selectedCountry, showActiveOnly, pageSize]);
 
     // Fetch dropdown data
     const fetchDropdownData = async () => {
@@ -516,19 +517,56 @@ const AirportManagement = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-                <div className="flex items-center justify-between bg-white px-6 py-3 border rounded-lg">
-                    <div className="text-sm text-gray-700">
-                        Menampilkan {((currentPage - 1) * 10) + 1} sampai {Math.min(currentPage * 10, totalRecords)} dari {totalRecords} airport
+                <div className="flex items-center justify-between px-6 py-3">
+                    <div className="flex items-center gap-4">
+                        <div className="text-sm text-gray-700">
+                            Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalRecords)} of {totalRecords} results
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-700">
+                            <span>Show:</span>
+                            <select
+                                value={pageSize}
+                                onChange={(e) => {
+                                    setPageSize(Number(e.target.value));
+                                    setCurrentPage(1);
+                                    fetchAirports(1);
+                                }}
+                                className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent"
+                            >
+                                <option value={5}>5</option>
+                                <option value={8}>8</option>
+                                <option value={10}>10</option>
+                                <option value={15}>15</option>
+                                <option value={20}>20</option>
+                            </select>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                        {/* First page button */}
+                        <button
+                            onClick={() => fetchAirports(1)}
+                            disabled={currentPage <= 1}
+                            className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="First page"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                            </svg>
+                        </button>
+
+                        {/* Previous page button */}
                         <button
                             onClick={() => fetchAirports(currentPage - 1)}
                             disabled={currentPage <= 1}
-                            className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Previous page"
                         >
-                            Previous
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
                         </button>
 
+                        {/* Page numbers */}
                         <div className="flex items-center gap-1">
                             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                 const page = Math.max(1, currentPage - 2) + i;
@@ -538,9 +576,9 @@ const AirportManagement = () => {
                                     <button
                                         key={page}
                                         onClick={() => fetchAirports(page)}
-                                        className={`px-3 py-1 text-sm border rounded-md ${currentPage === page
-                                            ? 'bg-blue-500 text-white border-blue-500'
-                                            : 'hover:bg-gray-50'
+                                        className={`w-8 h-8 text-sm rounded ${currentPage === page
+                                            ? 'bg-blue-600 text-white'
+                                            : 'text-gray-600 hover:bg-gray-100'
                                             }`}
                                     >
                                         {page}
@@ -549,12 +587,28 @@ const AirportManagement = () => {
                             })}
                         </div>
 
+                        {/* Next page button */}
                         <button
                             onClick={() => fetchAirports(currentPage + 1)}
                             disabled={currentPage >= totalPages}
-                            className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Next page"
                         >
-                            Next
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+
+                        {/* Last page button */}
+                        <button
+                            onClick={() => fetchAirports(totalPages)}
+                            disabled={currentPage >= totalPages}
+                            className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Last page"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                            </svg>
                         </button>
                     </div>
                 </div>

@@ -12,6 +12,8 @@ import { AirlinesManager } from "../dashboard/airlines_styled";
 import { SchedulesManager } from "../dashboard/flightSchedule";
 import { PromosManager } from "../dashboard/promotion";
 import DatabaseAirportsStyled from "../dashboard/databaseAirports_styled";
+import { CountriesManager } from "../dashboard/countries";
+import { CitiesManager } from "../dashboard/cities";
 
 // Layout Wrapper Component
 function LayoutWrapper({ children }: { children: React.ReactNode }) {
@@ -43,6 +45,14 @@ function PromotionsPage() {
 
 function AirportsPage() {
     return <DatabaseAirportsStyled />;
+}
+
+function CountriesPage() {
+    return <CountriesManager />;
+}
+
+function CitiesPage() {
+    return <CitiesManager />;
 }
 
 export const router = createBrowserRouter([
@@ -113,6 +123,30 @@ export const router = createBrowserRouter([
                 <ProtectedRoute>
                     <LayoutWrapper>
                         <AirportsPage />
+                    </LayoutWrapper>
+                </ProtectedRoute>
+            </AuthProvider>
+        ),
+    },
+    {
+        path: "/countries",
+        element: (
+            <AuthProvider>
+                <ProtectedRoute>
+                    <LayoutWrapper>
+                        <CountriesPage />
+                    </LayoutWrapper>
+                </ProtectedRoute>
+            </AuthProvider>
+        ),
+    },
+    {
+        path: "/cities",
+        element: (
+            <AuthProvider>
+                <ProtectedRoute>
+                    <LayoutWrapper>
+                        <CitiesPage />
                     </LayoutWrapper>
                 </ProtectedRoute>
             </AuthProvider>

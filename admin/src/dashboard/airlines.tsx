@@ -24,7 +24,7 @@ export function AirlinesManager() {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Airline | null>(null);
   const [page, setPage] = useState(1);
-  const [size, setSize] = useState(10);
+  const [size, setSize] = useState(8);
   const [sortKey] = useState<keyof Airline>("name");
   const [dir] = useState<SortDir>("asc");
 
@@ -307,24 +307,15 @@ export function AirlinesManager() {
 
         <Pagination page={page} pages={pages} size={size} onPage={setPage} onSize={setSize} />
 
-        {editing && (
-          <Modal onClose={() => setEditing(null)} title={editing.id ? "Edit Maskapai" : "Tambah Maskapai"}>
-            <AirlineForm value={editing} onCancel={() => setEditing(null)} onSubmit={(v) => handleSave(v)} />
-          </Modal>
-        )}
+        <Pagination page={page} pages={pages} size={size} total={filtered.length} onPage={setPage} onSize={setSize} />
       </div>
+
+      {editing && (
+        <Modal onClose={() => setEditing(null)} title={editing.id ? "Edit Maskapai" : "Tambah Maskapai"}>
+          <AirlineForm value={editing || {}} onCancel={() => setEditing(null)} onSubmit={(v) => handleSave(v)} />
+        </Modal>
+      )}
     </div>
-
-      <Pagination page={page} pages={pages} size={size} onPage={setPage} onSize={setSize} />
-
-      {
-    editing && (
-      <Modal onClose={() => setEditing(null)} title={editing.id ? "Edit Maskapai" : "Tambah Maskapai"}>
-        <AirlineForm value={editing} onCancel={() => setEditing(null)} onSubmit={(v) => handleSave(v)} />
-      </Modal>
-    )
-  }
-    </div >
   );
 }
 

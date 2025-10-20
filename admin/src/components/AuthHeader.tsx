@@ -29,8 +29,9 @@ export function AuthHeader({ sidebarOpen, setSidebarOpen, dark, setDark }: AuthH
                     <button
                         onClick={() => setSidebarOpen(!sidebarOpen)}
                         className="group relative rounded-xl border border-slate-200/60 dark:border-slate-700/60 p-2.5 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-all duration-200 hover:scale-105"
+                        title={sidebarOpen ? "Close sidebar" : "Open sidebar"}
                     >
-                        <div className={`transition-transform duration-300 ${sidebarOpen ? "rotate-180" : ""}`}>
+                        <div className={`transition-transform duration-300`}>
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
