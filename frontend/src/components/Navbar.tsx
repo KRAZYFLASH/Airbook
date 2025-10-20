@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plane, Globe, LogIn, ChevronDown, User, LogOut } from "lucide-react";
+import { Plane, Globe, LogIn, ChevronDown, LogOut } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 

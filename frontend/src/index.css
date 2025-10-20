@@ -5,6 +5,14 @@
   clip-path: ellipse(120% 100% at 100% 0%);
 }
 
+/* Line clamping for destination descriptions */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* Sembunyikan ikon "reveal/clear" bawaan browser */
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {

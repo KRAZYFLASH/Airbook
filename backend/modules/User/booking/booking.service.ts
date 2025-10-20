@@ -1,4 +1,5 @@
 import { BookingRepository } from "./booking.repo";
+import { DestinationRepository } from "../../destination/destination.repo";
 import { prisma } from "../../../db/prisma";
 import {
   CreateBookingInput,
@@ -13,9 +14,11 @@ import {
 
 export class BookingService {
   private bookingRepo: BookingRepository;
+  private destinationRepo: DestinationRepository;
 
   constructor() {
     this.bookingRepo = new BookingRepository();
+    this.destinationRepo = new DestinationRepository();
   }
 
   // Create new booking
@@ -26,9 +29,21 @@ export class BookingService {
     try {
       // Validate destinations exist
       const [destination, fromDestination] = await Promise.all([
-        prisma.destination.findUnique({ where: { id: data.destinationId } }),
+        prisma.destination.findUnique({
+          where: { id: data.destinationId },
+          include: {
+            country: true,
+            city: true,
+            airport: true,
+          },
+        }),
         prisma.destination.findUnique({
           where: { id: data.fromDestinationId },
+          include: {
+            country: true,
+            city: true,
+            airport: true,
+          },
         }),
       ]);
 
@@ -82,8 +97,8 @@ export class BookingService {
       const totalPrice = this.calculatePrice(
         data.passengers,
         data.bookingClass,
-        destination.country,
-        fromDestination.country
+        destination.country.name,
+        fromDestination.country.name
       );
 
       // Generate booking reference
@@ -402,22 +417,22 @@ export class BookingService {
       destination: {
         id: booking.destination.id,
         name: booking.destination.name,
-        city: booking.destination.city,
-        country: booking.destination.country,
-        code: booking.destination.code,
-        airport: booking.destination.airport,
+        city: booking.destination.city?.name || "",
+        country: booking.destination.country?.name || "",
+        code: booking.destination.airport?.iataCode || "",
+        airport: booking.destination.airport?.name || "",
       },
       fromDestination: {
         id: booking.fromDestination.id,
         name: booking.fromDestination.name,
-        city: booking.fromDestination.city,
-        country: booking.fromDestination.country,
-        code: booking.fromDestination.code,
-        airport: booking.fromDestination.airport,
+        city: booking.fromDestination.city?.name || "",
+        country: booking.fromDestination.country?.name || "",
+        code: booking.fromDestination.airport?.iataCode || "",
+        airport: booking.fromDestination.airport?.name || "",
       },
       departureDate: booking.departureDate,
       returnDate: booking.returnDate,
-      passengers: booking.passengers,
+      passengers: booking.passengerCount,
       bookingClass: booking.bookingClass,
       totalPrice: booking.totalPrice,
       status: booking.status,

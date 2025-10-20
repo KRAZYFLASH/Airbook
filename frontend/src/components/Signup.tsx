@@ -1,6 +1,8 @@
 // src/pages/SignupClean.tsx
 import React, { useMemo, useState } from "react";
 import { User, Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface FieldProps {
   icon: React.ReactNode;
@@ -41,6 +43,10 @@ export default function SignupClean(): React.ReactElement {
   const [showPw, setShowPw] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [accept, setAccept] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { register } = useAuth();
+  const navigate = useNavigate();
 
   const strength = useMemo(() => {
     let s = 0;
@@ -64,39 +70,28 @@ export default function SignupClean(): React.ReactElement {
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
-      console.log("Sending signup request:", { name, email, password: pw });
+      const result = await register(name, email, pw);
 
-      const response = await fetch('http://localhost:3001/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          password: pw
-        })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert(`Signup successful! Welcome ${data.user?.name || name}! You can now login.`);
-        console.log('Signup success:', data);
-        // Reset form on success
-        setName("");
-        setEmail("");
-        setPw("");
-        setConfirm("");
-        setAccept(false);
+      if (result.success) {
+        // Redirect to home after successful registration
+        navigate('/', { replace: true });
       } else {
-        alert(`Signup failed: ${data.message || 'Unknown error'}`);
-        console.error('Signup error:', data);
+        alert(`Signup failed: ${result.message}`);
       }
     } catch (error) {
-      console.error('Network error:', error);
-      alert('Network error. Please make sure the backend server is running on port 3001.');
+      console.error('Signup error:', error);
+      alert('Network error. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+      // Reset form on error only (success will redirect)
+      setName("");
+      setEmail("");
+      setPw("");
+      setConfirm("");
+      setAccept(false);
     }
   };
 
@@ -230,10 +225,10 @@ export default function SignupClean(): React.ReactElement {
 
               <button
                 type="submit"
-                disabled={!accept}
+                disabled={!accept || isSubmitting}
                 className="h-12 rounded-2xl bg-neutral-900 text-white font-semibold hover:bg-black/90 disabled:opacity-60 transition"
               >
-                Create account
+                {isSubmitting ? "Creating account..." : "Create account"}
               </button>
             </div>
 
@@ -256,9 +251,12 @@ export default function SignupClean(): React.ReactElement {
 
           <p className="mt-6 text-sm text-center text-slate-600">
             Sudah punya akun?{" "}
-            <a href="/login" className="text-blue-600 font-medium hover:underline">
+            <button
+              onClick={() => navigate('/login')}
+              className="text-blue-600 font-medium hover:underline"
+            >
               Login
-            </a>
+            </button>
           </p>
         </div>
       </div>

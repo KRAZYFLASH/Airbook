@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+/* Enhanced Tailwind CSS utility classes for AirBook Admin V3 */
+
+@layer components {
+  .card {
+    @apply rounded-3xl border border-white/30 dark:border-slate-700/30 bg-white/60 dark:bg-slate-900/60 p-6 shadow-xl shadow-slate-900/5 backdrop-blur-xl transition-all duration-200 hover:shadow-2xl hover:scale-[1.01];
+  }
+
+  .input {
+    @apply h-11 w-full rounded-xl border border-slate-200/60 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/80 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 dark:focus:border-blue-700 transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-slate-500;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 rounded-xl border border-slate-200/60 dark:border-slate-700/60 bg-white/60 dark:bg-slate-800/60 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 backdrop-blur hover:bg-white/80 dark:hover:bg-slate-800/80 hover:scale-105 transition-all duration-200;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-rose-500/25 hover:shadow-xl hover:shadow-rose-500/30 hover:scale-105 transition-all duration-200;
+  }
+
+  .field span {
+    @apply block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium bg-slate-100/80 text-slate-700 dark:bg-slate-800/80 dark:text-slate-200 border border-slate-200/50 dark:border-slate-700/50;
+  }
+
+  .badge-ok {
+    @apply bg-emerald-100/80 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200/50 dark:border-emerald-800/50;
+  }
+
+  .badge-warn {
+    @apply bg-amber-100/80 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200/50 dark:border-amber-800/50;
+  }
+
+  .badge-danger {
+    @apply bg-rose-100/80 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 border-rose-200/50 dark:border-rose-800/50;
+  }
+
+  .badge-dim {
+    @apply bg-slate-100/80 text-slate-600 dark:bg-slate-800/80 dark:text-slate-300 border-slate-200/50 dark:border-slate-700/50;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border border-slate-300/60 dark:border-slate-700/60 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 bg-white/60 dark:bg-slate-800/60 hover:bg-white/80 dark:hover:bg-slate-800/80 hover:scale-105 transition-all duration-200 cursor-pointer;
+  }
+
+  .chip-active {
+    @apply bg-gradient-to-r from-blue-600 to-purple-600 text-white border-transparent shadow-lg shadow-blue-500/25;
+  }
+
+  /* Custom scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-slate-100/50 dark:bg-slate-800/50 rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-slate-300/80 dark:bg-slate-600/80 rounded-full hover:bg-slate-400/80 dark:hover:bg-slate-500/80;
+  }
+
+  /* Enhanced animations */
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes glow {
+    0%,
+    100% {
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 40px rgba(59, 130, 246, 0.4),
+        0 0 60px rgba(59, 130, 246, 0.2);
+    }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-glow {
+    animation: glow 3s ease-in-out infinite;
+  }
+
+  /* Glass morphism effects */
+  .glass {
+    @apply bg-white/10 dark:bg-slate-800/10 backdrop-blur-xl border border-white/20 dark:border-slate-700/20;
+  }
+
+  .glass-strong {
+    @apply bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl border border-white/30 dark:border-slate-700/30;
+  }
+
+  /* Line clamp utilities */
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    overflow: hidden;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+  }
+}

@@ -1,47 +1,43 @@
 import React, { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function LoginFullBg(): React.ReactElement {
   const [email, setEmail] = useState<string>("");
   const [pw, setPw] = useState<string>("");
   const [show, setShow] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get the page user was trying to access before login, default to home
+  const from = location.state?.from || '/';
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     try {
-      console.log("Sending login request:", { email, password: pw });
+      const result = await login(email, pw);
 
-      const response = await fetch('http://localhost:3001/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password: pw
-        })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert(`Login successful! Welcome ${data.user?.name || 'User'}`);
-        console.log('Login success:', data);
-        // TODO: Store token and redirect
-        localStorage.setItem('token', data.token);
+      if (result.success) {
+        // Redirect to home or the page user was trying to access
+        navigate(from, { replace: true });
       } else {
-        alert(`Login failed: ${data.message || 'Unknown error'}`);
-        console.error('Login error:', data);
+        alert(`Login failed: ${result.message}`);
       }
     } catch (error) {
-      console.error('Network error:', error);
-      alert('Network error. Please make sure the backend server is running on port 3001.');
+      console.error('Login error:', error);
+      alert('Network error. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+      // Reset form
+      setEmail("");
+      setPw("");
     }
-
-    // Reset form
-    setEmail("");
-    setPw("");
   };
 
   return (
@@ -117,9 +113,10 @@ export default function LoginFullBg(): React.ReactElement {
 
             <button
               type="submit"
-              className="h-12 rounded-2xl bg-neutral-900 text-white font-semibold hover:bg-black/90 active:scale-[0.99] transition"
+              disabled={isSubmitting}
+              className="h-12 rounded-2xl bg-neutral-900 text-white font-semibold hover:bg-black/90 active:scale-[0.99] transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Get Started
+              {isSubmitting ? "Signing in..." : "Login"}
             </button>
 
             {/* Divider */}
@@ -142,10 +139,13 @@ export default function LoginFullBg(): React.ReactElement {
 
           {/* Link ke signup */}
           <p className="mt-6 text-sm text-center text-slate-600">
-            Don’t have an account?{" "}
-            <a href="/signup" className="text-blue-600 font-medium hover:underline">
+            Don't have an account?{" "}
+            <button
+              onClick={() => navigate('/signup')}
+              className="text-blue-600 font-medium hover:underline"
+            >
               Sign up
-            </a>
+            </button>
           </p>
         </div>
       </div>

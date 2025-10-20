@@ -3,6 +3,11 @@ import cors from "cors";
 import { authRoutes } from "./modules/auth";
 import destinationRoutes from "./modules/destination/destination.routes";
 import { bookingRoutes } from "./modules/User/booking";
+import { airlineRoutes } from "./modules/airlines";
+import { flightScheduleRoutes } from "./modules/flight-schedule";
+import { promotionRoutes } from "./modules/promotion";
+import { airportRoutes } from "./modules/airports";
+import databaseAirportRoutes from "./modules/airports/database-airport.routes";
 import { requestLogger } from "./common/middleware";
 
 const app = express();
@@ -11,17 +16,33 @@ const app = express();
 app.use(requestLogger);
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: true, // Allow all origins in development
     credentials: true,
   })
 );
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
+// General logging middleware
+app.use((req, res, next) => {
+  if (req.url.includes("/api/")) {
+    console.log(`🌐 ${new Date().toISOString()} - ${req.method} ${req.url}`);
+    if (req.method === "PUT" && req.body) {
+      console.log("📦 Body:", JSON.stringify(req.body, null, 2));
+    }
+  }
+  next();
+});
+
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/destinations", destinationRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/airlines", airlineRoutes);
+app.use("/api/flight-schedules", flightScheduleRoutes);
+app.use("/api/promotions", promotionRoutes);
+app.use("/api/airports", airportRoutes);
+app.use("/api/db-airports", databaseAirportRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

@@ -1,0 +1,109 @@
+# Basic Docker Compose for Airbook - Essential Services Only
+services:
+  # PostgreSQL - Main Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: airbook_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: airbook_db
+      POSTGRES_USER: airbook_user
+      POSTGRES_PASSWORD: airbook_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d
+    networks:
+      - airbook_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airbook_user -d airbook_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # pgAdmin - Database Management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: airbook_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@airbook.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "8080:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - airbook_network
+
+  # Redis - Caching
+  redis:
+    image: redis:7-alpine
+    container_name: airbook_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass airbook_redis_password
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - airbook_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "airbook_redis_password", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # MongoDB - Logs
+  mongodb:
+    image: mongo:7
+    container_name: airbook_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo_user
+      MONGO_INITDB_ROOT_PASSWORD: mongo_password
+      MONGO_INITDB_DATABASE: airbook_logs
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongodb/init:/docker-entrypoint-initdb.d
+    networks:
+      - airbook_network
+
+  # MinIO - Object Storage
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: airbook_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - airbook_network
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  redis_data:
+    driver: local
+  mongodb_data:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  airbook_network:
+    driver: bridge

@@ -12,74 +12,89 @@ export class DestinationController {
     this.destinationService = new DestinationService();
   }
 
+  // Mock data untuk testing frontend (sementara)
+  getMockDestinations = async (req: Request, res: Response) => {
+    try {
+      const mockDestinations = [
+        {
+          id: "bali-dest",
+          name: "Bali Paradise",
+          description:
+            "Experience the beautiful beaches, temples, and culture of Bali",
+          category: "BEACH",
+          rating: 4.8,
+          imageUrl:
+            "https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=800",
+          isActive: true,
+          isFeatured: true,
+          city: { id: "denpasar-city", name: "Denpasar" },
+          country: { id: "indonesia-id", name: "Indonesia" },
+          airport: {
+            id: "dps-airport",
+            name: "Ngurah Rai International Airport",
+            iataCode: "DPS",
+          },
+        },
+        {
+          id: "jakarta-dest",
+          name: "Jakarta City Break",
+          description:
+            "Explore Indonesia's vibrant capital city with modern attractions",
+          category: "CITY",
+          rating: 4.3,
+          imageUrl:
+            "https://images.unsplash.com/photo-1555333145-4acf190da336?w=800",
+          isActive: true,
+          isFeatured: true,
+          city: { id: "jakarta-city", name: "Jakarta" },
+          country: { id: "indonesia-id", name: "Indonesia" },
+          airport: {
+            id: "cgk-airport",
+            name: "Soekarno-Hatta International Airport",
+            iataCode: "CGK",
+          },
+        },
+        {
+          id: "yogya-dest",
+          name: "Yogyakarta Cultural Tour",
+          description:
+            "Discover the cultural heart of Java with ancient temples and traditions",
+          category: "CULTURAL",
+          rating: 4.6,
+          imageUrl:
+            "https://images.unsplash.com/photo-1599833842960-0143f48e65f8?w=800",
+          isActive: true,
+          isFeatured: true,
+          city: { id: "yogya-city", name: "Yogyakarta" },
+          country: { id: "indonesia-id", name: "Indonesia" },
+          airport: {
+            id: "jog-airport",
+            name: "Adisutcipto International Airport",
+            iataCode: "JOG",
+          },
+        },
+      ];
+
+      res.json({
+        success: true,
+        message: "Mock destinations retrieved successfully",
+        data: mockDestinations,
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: 3,
+          totalPages: 1,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  };
+
   // CSV Import Endpoints
-
-  // POST /api/destinations/import/csv
-  importAirportsFromCSV = async (req: Request, res: Response) => {
-    try {
-      const { countries, types, limit, overwrite } = req.body;
-
-      const options = {
-        countries: countries || undefined,
-        types: types || undefined,
-        limit: limit ? parseInt(limit) : undefined,
-        overwrite: overwrite === true,
-      };
-
-      const result = await this.destinationService.importAirportsFromCSV(
-        options
-      );
-
-      if (result.success) {
-        res.status(201).json(result);
-      } else {
-        res.status(400).json(result);
-      }
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Internal server error during CSV import",
-      });
-    }
-  };
-
-  // POST /api/destinations/import/indonesia
-  bulkImportIndonesian = async (req: Request, res: Response) => {
-    try {
-      const result =
-        await this.destinationService.bulkImportIndonesianAirports();
-
-      if (result.success) {
-        res.status(201).json(result);
-      } else {
-        res.status(400).json(result);
-      }
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Internal server error during Indonesian airports import",
-      });
-    }
-  };
-
-  // POST /api/destinations/import/international
-  bulkImportInternational = async (req: Request, res: Response) => {
-    try {
-      const result =
-        await this.destinationService.bulkImportInternationalAirports();
-
-      if (result.success) {
-        res.status(201).json(result);
-      } else {
-        res.status(400).json(result);
-      }
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Internal server error during international airports import",
-      });
-    }
-  };
 
   // CSV Live Search Endpoints (without saving to DB)
 
@@ -118,116 +133,6 @@ export class DestinationController {
       res.status(500).json({
         success: false,
         message: "Internal server error",
-      });
-    }
-  };
-
-  // GET /api/destinations/csv/international
-  getInternationalFromCSV = async (req: Request, res: Response) => {
-    try {
-      const result =
-        await this.destinationService.getInternationalAirportsFromCSV();
-      res.json(result);
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Internal server error",
-      });
-    }
-  };
-
-  // Frontend-specific endpoints for cleaner response
-
-  // GET /api/destinations/frontend/search?q=jakarta
-  frontendSearch = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { q } = req.query;
-
-      if (!q || typeof q !== "string" || q.length < 2) {
-        res.json({
-          success: true,
-          data: [],
-        });
-        return;
-      }
-
-      const result = await this.destinationService.searchAirportsFromCSV(q);
-
-      if (result.success) {
-        // Return clean response for frontend
-        res.json({
-          success: true,
-          data: result.data,
-        });
-      } else {
-        res.json({
-          success: false,
-          data: [],
-          error: result.message,
-        });
-      }
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        data: [],
-        error: "Server error",
-      });
-    }
-  };
-
-  // GET /api/destinations/frontend/indonesia
-  frontendIndonesia = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const result =
-        await this.destinationService.getIndonesianAirportsFromCSV();
-
-      if (result.success) {
-        res.json({
-          success: true,
-          data: result.data,
-        });
-      } else {
-        res.json({
-          success: false,
-          data: [],
-          error: result.message,
-        });
-      }
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        data: [],
-        error: "Server error",
-      });
-    }
-  };
-
-  // GET /api/destinations/frontend/international
-  frontendInternational = async (
-    req: Request,
-    res: Response
-  ): Promise<void> => {
-    try {
-      const result =
-        await this.destinationService.getInternationalAirportsFromCSV();
-
-      if (result.success) {
-        res.json({
-          success: true,
-          data: result.data,
-        });
-      } else {
-        res.json({
-          success: false,
-          data: [],
-          error: result.message,
-        });
-      }
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        data: [],
-        error: "Server error",
       });
     }
   };
@@ -363,6 +268,48 @@ export class DestinationController {
           message: "Internal server error",
         });
       }
+    }
+  };
+
+  // DELETE /api/destinations/:id
+  deleteDestination = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const result = await this.destinationService.deleteDestination(id);
+
+      if (result.success) {
+        res.json(result);
+      } else {
+        res
+          .status(result.message === "Destination not found" ? 404 : 400)
+          .json(result);
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  };
+
+  // GET /api/destinations/popular
+  getPopularDestinations = async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 6;
+      const result = await this.destinationService.getPopularDestinations(
+        limit
+      );
+
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(500).json(result);
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
     }
   };
 }

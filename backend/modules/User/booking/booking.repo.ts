@@ -22,9 +22,10 @@ export class BookingRepository {
         fromDestinationId: data.fromDestinationId,
         departureDate: new Date(data.departureDate),
         returnDate: data.returnDate ? new Date(data.returnDate) : null,
-        passengers: data.passengers,
+        passengerCount: data.passengers, // Use passengerCount instead of passengers
         bookingClass: data.bookingClass,
         totalPrice: data.totalPrice,
+        finalPrice: data.totalPrice, // Set finalPrice same as totalPrice for now
         bookingReference: data.bookingReference,
       },
       include: {
