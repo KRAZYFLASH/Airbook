@@ -2,223 +2,216 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+/**
+ * 🏙️ Cities Seeding
+ * Seeds major cities across Asia-Pacific region with population and geographic data
+ */
 export async function seedCities() {
-  console.log("Seeding cities...");
+  console.log("🏙️ Seeding cities...");
 
-  // Get countries first
-  const indonesia = await prisma.country.findUnique({ where: { code: "ID" } });
-  const malaysia = await prisma.country.findUnique({ where: { code: "MY" } });
-  const singapore = await prisma.country.findUnique({ where: { code: "SG" } });
-  const thailand = await prisma.country.findUnique({ where: { code: "TH" } });
-  const uae = await prisma.country.findUnique({ where: { code: "AE" } });
-  const turkey = await prisma.country.findUnique({ where: { code: "TR" } });
-  const qatar = await prisma.country.findUnique({ where: { code: "QA" } });
-  const japan = await prisma.country.findUnique({ where: { code: "JP" } });
-  const australia = await prisma.country.findUnique({ where: { code: "AU" } });
+  // Get all countries that we'll reference
+  const countries = await prisma.country.findMany({
+    where: {
+      code: { in: ["ID", "SG", "MY", "TH", "VN", "PH", "JP", "AU"] },
+    },
+  });
 
-  const cities = [
+  const cities = await Promise.all([
     // Indonesia
-    {
-      name: "Jakarta",
-      countryId: indonesia!.id,
-      state: "DKI Jakarta",
-      population: 10770000,
-      timezone: "Asia/Jakarta",
-      lat: -6.2088,
-      lon: 106.8456,
-    },
-    {
-      name: "Surabaya",
-      countryId: indonesia!.id,
-      state: "East Java",
-      population: 2874000,
-      timezone: "Asia/Jakarta",
-      lat: -7.2575,
-      lon: 112.7521,
-    },
-    {
-      name: "Medan",
-      countryId: indonesia!.id,
-      state: "North Sumatra",
-      population: 2435000,
-      timezone: "Asia/Jakarta",
-      lat: 3.5952,
-      lon: 98.6722,
-    },
-    {
-      name: "Bandung",
-      countryId: indonesia!.id,
-      state: "West Java",
-      population: 2504000,
-      timezone: "Asia/Jakarta",
-      lat: -6.9175,
-      lon: 107.6191,
-    },
-    {
-      name: "Yogyakarta",
-      countryId: indonesia!.id,
-      state: "Special Region of Yogyakarta",
-      population: 422000,
-      timezone: "Asia/Jakarta",
-      lat: -7.7956,
-      lon: 110.3695,
-    },
-    {
-      name: "Bali (Denpasar)",
-      countryId: indonesia!.id,
-      state: "Bali",
-      population: 897300,
-      timezone: "Asia/Makassar",
-      lat: -8.65,
-      lon: 115.2167,
-    },
-
-    // Malaysia
-    {
-      name: "Kuala Lumpur",
-      countryId: malaysia!.id,
-      state: "Federal Territory",
-      population: 1800000,
-      timezone: "Asia/Kuala_Lumpur",
-      lat: 3.139,
-      lon: 101.6869,
-    },
-    {
-      name: "Penang",
-      countryId: malaysia!.id,
-      state: "Penang",
-      population: 708127,
-      timezone: "Asia/Kuala_Lumpur",
-      lat: 5.4164,
-      lon: 100.3327,
-    },
-    {
-      name: "Johor Bahru",
-      countryId: malaysia!.id,
-      state: "Johor",
-      population: 497097,
-      timezone: "Asia/Kuala_Lumpur",
-      lat: 1.4927,
-      lon: 103.7414,
-    },
+    prisma.city.upsert({
+      where: { id: "city-jakarta" },
+      update: {},
+      create: {
+        id: "city-jakarta",
+        name: "Jakarta",
+        countryId: countries.find((c) => c.code === "ID")!.id,
+        state: "DKI Jakarta",
+        population: 10770000,
+        timezone: "Asia/Jakarta",
+        lat: -6.2088,
+        lon: 106.8456,
+        isActive: true,
+      },
+    }),
+    prisma.city.upsert({
+      where: { id: "city-surabaya" },
+      update: {},
+      create: {
+        id: "city-surabaya",
+        name: "Surabaya",
+        countryId: countries.find((c) => c.code === "ID")!.id,
+        state: "East Java",
+        population: 2874000,
+        timezone: "Asia/Jakarta",
+        lat: -7.2575,
+        lon: 112.7521,
+        isActive: true,
+      },
+    }),
+    prisma.city.upsert({
+      where: { id: "city-denpasar" },
+      update: {},
+      create: {
+        id: "city-denpasar",
+        name: "Denpasar",
+        countryId: countries.find((c) => c.code === "ID")!.id,
+        state: "Bali",
+        population: 897300,
+        timezone: "Asia/Makassar",
+        lat: -8.6705,
+        lon: 115.2126,
+        isActive: true,
+      },
+    }),
+    prisma.city.upsert({
+      where: { id: "city-medan" },
+      update: {},
+      create: {
+        id: "city-medan",
+        name: "Medan",
+        countryId: countries.find((c) => c.code === "ID")!.id,
+        state: "North Sumatra",
+        population: 2435000,
+        timezone: "Asia/Jakarta",
+        lat: 3.5952,
+        lon: 98.6722,
+        isActive: true,
+      },
+    }),
 
     // Singapore
-    {
-      name: "Singapore",
-      countryId: singapore!.id,
-      state: null,
-      population: 5454000,
-      timezone: "Asia/Singapore",
-      lat: 1.3521,
-      lon: 103.8198,
-    },
+    prisma.city.upsert({
+      where: { id: "city-singapore" },
+      update: {},
+      create: {
+        id: "city-singapore",
+        name: "Singapore",
+        countryId: countries.find((c) => c.code === "SG")!.id,
+        population: 5685000,
+        timezone: "Asia/Singapore",
+        lat: 1.3521,
+        lon: 103.8198,
+        isActive: true,
+      },
+    }),
+
+    // Malaysia
+    prisma.city.upsert({
+      where: { id: "city-kuala-lumpur" },
+      update: {},
+      create: {
+        id: "city-kuala-lumpur",
+        name: "Kuala Lumpur",
+        countryId: countries.find((c) => c.code === "MY")!.id,
+        state: "Federal Territory",
+        population: 1768000,
+        timezone: "Asia/Kuala_Lumpur",
+        lat: 3.139,
+        lon: 101.6869,
+        isActive: true,
+      },
+    }),
 
     // Thailand
-    {
-      name: "Bangkok",
-      countryId: thailand!.id,
-      state: "Bangkok",
-      population: 8281000,
-      timezone: "Asia/Bangkok",
-      lat: 13.7563,
-      lon: 100.5018,
-    },
-    {
-      name: "Phuket",
-      countryId: thailand!.id,
-      state: "Phuket",
-      population: 416582,
-      timezone: "Asia/Bangkok",
-      lat: 7.8804,
-      lon: 98.3923,
-    },
+    prisma.city.upsert({
+      where: { id: "city-bangkok" },
+      update: {},
+      create: {
+        id: "city-bangkok",
+        name: "Bangkok",
+        countryId: countries.find((c) => c.code === "TH")!.id,
+        population: 10539000,
+        timezone: "Asia/Bangkok",
+        lat: 13.7563,
+        lon: 100.5018,
+        isActive: true,
+      },
+    }),
 
-    // UAE
-    {
-      name: "Dubai",
-      countryId: uae!.id,
-      state: "Dubai",
-      population: 3331000,
-      timezone: "Asia/Dubai",
-      lat: 25.2048,
-      lon: 55.2708,
-    },
-    {
-      name: "Abu Dhabi",
-      countryId: uae!.id,
-      state: "Abu Dhabi",
-      population: 1482000,
-      timezone: "Asia/Dubai",
-      lat: 24.4539,
-      lon: 54.3773,
-    },
+    // Vietnam
+    prisma.city.upsert({
+      where: { id: "city-ho-chi-minh" },
+      update: {},
+      create: {
+        id: "city-ho-chi-minh",
+        name: "Ho Chi Minh City",
+        countryId: countries.find((c) => c.code === "VN")!.id,
+        population: 9321000,
+        timezone: "Asia/Ho_Chi_Minh",
+        lat: 10.8231,
+        lon: 106.6297,
+        isActive: true,
+      },
+    }),
 
-    // Turkey
-    {
-      name: "Istanbul",
-      countryId: turkey!.id,
-      state: "Istanbul",
-      population: 15460000,
-      timezone: "Europe/Istanbul",
-      lat: 41.0082,
-      lon: 28.9784,
-    },
-
-    // Qatar
-    {
-      name: "Doha",
-      countryId: qatar!.id,
-      state: "Doha",
-      population: 956460,
-      timezone: "Asia/Qatar",
-      lat: 25.2854,
-      lon: 51.531,
-    },
+    // Philippines
+    prisma.city.upsert({
+      where: { id: "city-manila" },
+      update: {},
+      create: {
+        id: "city-manila",
+        name: "Manila",
+        countryId: countries.find((c) => c.code === "PH")!.id,
+        population: 13482000,
+        timezone: "Asia/Manila",
+        lat: 14.5995,
+        lon: 120.9842,
+        isActive: true,
+      },
+    }),
 
     // Japan
-    {
-      name: "Tokyo",
-      countryId: japan!.id,
-      state: "Tokyo",
-      population: 13960000,
-      timezone: "Asia/Tokyo",
-      lat: 35.6762,
-      lon: 139.6503,
-    },
+    prisma.city.upsert({
+      where: { id: "city-tokyo" },
+      update: {},
+      create: {
+        id: "city-tokyo",
+        name: "Tokyo",
+        countryId: countries.find((c) => c.code === "JP")!.id,
+        population: 37435000,
+        timezone: "Asia/Tokyo",
+        lat: 35.6762,
+        lon: 139.6503,
+        isActive: true,
+      },
+    }),
 
     // Australia
-    {
-      name: "Sydney",
-      countryId: australia!.id,
-      state: "New South Wales",
-      population: 5312000,
-      timezone: "Australia/Sydney",
-      lat: -33.8688,
-      lon: 151.2093,
-    },
-    {
-      name: "Melbourne",
-      countryId: australia!.id,
-      state: "Victoria",
-      population: 5078000,
-      timezone: "Australia/Melbourne",
-      lat: -37.8136,
-      lon: 144.9631,
-    },
-  ];
-
-  for (const city of cities) {
-    await prisma.city.upsert({
-      where: {
-        id: `${city.name.toLowerCase().replace(/\s+/g, "-")}-${city.countryId}`,
-      },
-      update: city,
+    prisma.city.upsert({
+      where: { id: "city-sydney" },
+      update: {},
       create: {
-        id: `${city.name.toLowerCase().replace(/\s+/g, "-")}-${city.countryId}`,
-        ...city,
+        id: "city-sydney",
+        name: "Sydney",
+        countryId: countries.find((c) => c.code === "AU")!.id,
+        state: "New South Wales",
+        population: 5312000,
+        timezone: "Australia/Sydney",
+        lat: -33.8688,
+        lon: 151.2093,
+        isActive: true,
       },
-    });
-  }
+    }),
+  ]);
 
   console.log(`✅ Seeded ${cities.length} cities`);
+  return cities;
+}
+
+/**
+ * Standalone execution for testing
+ */
+if (require.main === module) {
+  seedCities()
+    .then(() => {
+      console.log("🏙️ Cities seeding completed!");
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error("❌ Cities seeding failed:", error);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
 }

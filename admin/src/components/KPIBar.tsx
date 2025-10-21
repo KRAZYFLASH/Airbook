@@ -7,19 +7,21 @@ import { clsx } from "../utils";
 import { AirlineIcon, ScheduleIcon, PromoIcon } from "./Icons";
 
 export function KPIBar({ airlines, schedules, promos }: { airlines: Airline[]; schedules: FlightSchedule[]; promos: Promo[] }) {
-  const ontime = schedules.filter(s => s.status === "ON_TIME").length;
-  const delayed = schedules.filter(s => s.status === "DELAYED").length;
-  const activePromos = promos.filter(p => p.active).length;
+  const scheduledFlights = schedules.filter(s => s.status === "SCHEDULED").length;
+  const delayedFlights = schedules.filter(s => s.status === "DELAYED").length;
+  const cancelledFlights = schedules.filter(s => s.status === "CANCELLED").length;
+  const activeAirlines = airlines.filter(a => a.isActive).length;
+  const activePromos = promos.filter(p => p.isActive).length;
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <EnhancedKPI
         title="Airlines"
         value={airlines.length}
-        subtitle={`${airlines.filter(a => a.active).length} active`}
+        subtitle={`${activeAirlines} active`}
         icon={<AirlineIcon />}
-        trend="+2 this month"
-        trendUp={true}
+        trend={`${activeAirlines}/${airlines.length} operational`}
+        trendUp={activeAirlines > airlines.length / 2}
         tone="blue"
       />
       <EnhancedKPI
@@ -27,21 +29,21 @@ export function KPIBar({ airlines, schedules, promos }: { airlines: Airline[]; s
         value={schedules.length}
         subtitle="total routes"
         icon={<ScheduleIcon />}
-        trend="+12 this week"
-        trendUp={true}
+        trend={scheduledFlights > 0 ? `${scheduledFlights} scheduled` : "No flights scheduled"}
+        trendUp={scheduledFlights > 0}
         tone="purple"
       />
       <EnhancedKPI
         title="On-Time Performance"
-        value={`${schedules.length > 0 ? Math.round((ontime / schedules.length) * 100) : 0}%`}
-        subtitle={`${ontime} of ${schedules.length} flights`}
+        value={`${schedules.length > 0 ? Math.round((scheduledFlights / schedules.length) * 100) : 0}%`}
+        subtitle={`${scheduledFlights} of ${schedules.length} flights`}
         icon={
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         }
-        trend={delayed > 0 ? `${delayed} delayed` : "All on-time"}
-        trendUp={delayed === 0}
+        trend={delayedFlights > 0 ? `${delayedFlights} delayed` : "All on-time"}
+        trendUp={delayedFlights === 0}
         tone="emerald"
       />
       <EnhancedKPI
@@ -49,8 +51,8 @@ export function KPIBar({ airlines, schedules, promos }: { airlines: Airline[]; s
         value={activePromos}
         subtitle={`of ${promos.length} total`}
         icon={<PromoIcon />}
-        trend="2 ending soon"
-        trendUp={false}
+        trend={activePromos === promos.length ? "All active" : `${promos.length - activePromos} inactive`}
+        trendUp={activePromos > 0}
         tone="amber"
       />
     </div>
