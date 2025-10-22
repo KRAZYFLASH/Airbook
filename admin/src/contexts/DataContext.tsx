@@ -236,30 +236,36 @@ export function DataProvider({ children }: DataProviderProps) {
         airlinesLoading,
         airlinesError,
         refetchAirlines: fetchAirlines,
-        createAirline: (data) => createAirlineMutation.mutate(data),
-        updateAirline: (id, data) => updateAirlineMutation.mutate({ id, data }),
-        deleteAirline: (id) => deleteAirlineMutation.mutate(id),
+        createAirline: async (data) => {
+            console.log("✈️ DataContext createAirline called with:", data);
+            return createAirlineMutation.mutate(data);
+        },
+        updateAirline: async (id, data) => {
+            console.log("🔄 DataContext updateAirline called with:", { id, data });
+            return updateAirlineMutation.mutate({ id, data });
+        },
+        deleteAirline: async (id) => deleteAirlineMutation.mutate(id),
 
         // Flight Schedules
         schedules,
         schedulesLoading,
         schedulesError,
         refetchSchedules: fetchSchedules,
-        createSchedule: (data) => {
+        createSchedule: async (data) => {
             console.log("📋 DataContext createSchedule called with:", data);
-            createScheduleMutation.mutate(data);
+            return createScheduleMutation.mutate(data);
         },
-        updateSchedule: (id, data) => updateScheduleMutation.mutate({ id, data }),
-        deleteSchedule: (id) => deleteScheduleMutation.mutate(id),
+        updateSchedule: async (id, data) => updateScheduleMutation.mutate({ id, data }),
+        deleteSchedule: async (id) => deleteScheduleMutation.mutate(id),
 
         // Promotions
         promos,
         promosLoading,
         promosError,
         refetchPromos: fetchPromos,
-        createPromo: (data) => createPromoMutation.mutate(data),
-        updatePromo: (id, data) => updatePromoMutation.mutate({ id, data }),
-        deletePromo: (id) => deletePromoMutation.mutate(id),
+        createPromo: async (data) => createPromoMutation.mutate(data),
+        updatePromo: async (id, data) => updatePromoMutation.mutate({ id, data }),
+        deletePromo: async (id) => deletePromoMutation.mutate(id),
 
         // Destinations
         destinations,

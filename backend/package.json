@@ -35,10 +35,10 @@
     "db:seed-flights": "ts-node prisma/seeds/flightSchedules.ts",
     "db:seed-promotions": "ts-node prisma/seeds/promotions.ts",
     "db:reset": "prisma migrate reset --force",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f",
-    "docker:restart": "docker-compose restart",
+    "docker:up": "docker-compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker-compose -f docker/docker-compose.yml down",
+    "docker:logs": "docker-compose -f docker/docker-compose.yml logs -f",
+    "docker:restart": "docker-compose -f docker/docker-compose.yml restart",
     "test": "echo \"No tests yet\""
   },
   "devDependencies": {

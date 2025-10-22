@@ -3,7 +3,7 @@
 // =============================================================
 
 import { Router } from "express";
-import { DatabaseAirportService } from "../../services/databaseAirportService";
+import { DatabaseAirportService } from "../../services/database/airport.service";
 
 const router = Router();
 

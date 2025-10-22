@@ -23,14 +23,6 @@ const searchAirlines = airlineController.searchAirlines.bind(airlineController);
 const createAirline = airlineController.createAirline.bind(airlineController);
 const updateAirline = airlineController.updateAirline.bind(airlineController);
 const deleteAirline = airlineController.deleteAirline.bind(airlineController);
-const fetchExternalAirlines =
-  airlineController.fetchExternalAirlines.bind(airlineController);
-const fetchExternalAirlineByCode =
-  airlineController.fetchExternalAirlineByCode.bind(airlineController);
-const syncExternalAirlines =
-  airlineController.syncExternalAirlines.bind(airlineController);
-const getExternalProviders =
-  airlineController.getExternalProviders.bind(airlineController);
 
 // Routes
 router.use((req, res, next) => {
@@ -41,10 +33,6 @@ router.use((req, res, next) => {
 router.get("/", getAllAirlines);
 router.get("/active", getActiveAirlines);
 router.get("/search", searchAirlines);
-router.get("/external/fetch", fetchExternalAirlines);
-router.get("/external/providers", getExternalProviders);
-router.get("/external/code/:code", fetchExternalAirlineByCode);
-router.post("/external/sync", syncExternalAirlines);
 router.get("/code/:code", getAirlineByCode);
 router.get("/:id", getAirlineById);
 router.post("/", createAirline);

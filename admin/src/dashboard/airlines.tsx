@@ -37,7 +37,19 @@ function AirlineForm({ value, onCancel, onSubmit }: {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSubmit(form);
+
+        // Clean form data: remove null values and empty strings for optional fields
+        const cleanedForm = {
+            ...form,
+            icaoCode: form.icaoCode === "" || form.icaoCode === null ? undefined : form.icaoCode,
+            logo: form.logo === "" || form.logo === null ? undefined : form.logo,
+            description: form.description === "" || form.description === null ? undefined : form.description,
+            website: form.website === "" || form.website === null ? undefined : form.website,
+        };
+
+        console.log("🔄 Form submit (original):", form);
+        console.log("🧹 Form submit (cleaned):", cleanedForm);
+        onSubmit(cleanedForm);
     };
 
     return (
@@ -50,11 +62,12 @@ function AirlineForm({ value, onCancel, onSubmit }: {
                     <input
                         type="text"
                         value={form.code || ""}
-                        onChange={(e) => setForm({ ...form, code: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono uppercase"
                         required
                         maxLength={3}
                         placeholder="GA, QZ, ID"
+                        style={{ textTransform: 'uppercase' }}
                     />
                 </div>
                 <div>
@@ -64,10 +77,11 @@ function AirlineForm({ value, onCancel, onSubmit }: {
                     <input
                         type="text"
                         value={form.icaoCode || ""}
-                        onChange={(e) => setForm({ ...form, icaoCode: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onChange={(e) => setForm({ ...form, icaoCode: e.target.value.toUpperCase() })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono uppercase"
                         maxLength={3}
                         placeholder="GIA, AWQ, ION"
+                        style={{ textTransform: 'uppercase' }}
                     />
                 </div>
             </div>
@@ -157,10 +171,19 @@ export function AirlinesManager() {
         setEditing(null);
     };
 
-    const handleUpdate = (data: Partial<Airline>) => {
-        if (!editing?.id) return;
-        updateAirline(editing.id, data);
-        setEditing(null);
+    const handleUpdate = async (data: Partial<Airline>) => {
+        if (!editing?.id) {
+            console.error("❌ No editing ID found:", editing);
+            return;
+        }
+        console.log("🔄 Updating airline:", editing.id, data);
+        try {
+            await updateAirline(editing.id, data);
+            console.log("✅ Airline updated successfully");
+            setEditing(null);
+        } catch (error) {
+            console.error("❌ Error updating airline:", error);
+        }
     };
 
     const handleDelete = (id: UUID) => {

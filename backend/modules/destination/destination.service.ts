@@ -2,7 +2,7 @@ import { DestinationRepository } from "./destination.repo";
 import {
   CsvImportService,
   ProcessedAirportData,
-} from "../../services/csv-import.service";
+} from "../../services/import/csv.service";
 import {
   CreateDestinationInput,
   UpdateDestinationInput,

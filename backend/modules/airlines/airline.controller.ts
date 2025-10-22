@@ -1,15 +1,12 @@
 import { Request, Response } from "express";
 import { AirlineService } from "./airline.service";
 import { CreateAirlineSchema, UpdateAirlineSchema } from "./airline.schemas";
-import { ExternalAirlineService } from "../../services/external-api";
 
 export class AirlineController {
   private airlineService: AirlineService;
-  private externalAirlineService: ExternalAirlineService;
 
   constructor(airlineService: AirlineService) {
     this.airlineService = airlineService;
-    this.externalAirlineService = new ExternalAirlineService();
   }
 
   // GET /api/airlines
@@ -126,14 +123,25 @@ export class AirlineController {
     });
 
     try {
-      // Clean up empty strings to undefined for optional URL fields
+      // Clean up empty strings and null values to undefined for optional URL fields
       const cleanedBody = {
         ...req.body,
-        logo: req.body.logo === "" ? undefined : req.body.logo,
-        website: req.body.website === "" ? undefined : req.body.website,
-        icaoCode: req.body.icaoCode === "" ? undefined : req.body.icaoCode,
+        logo:
+          req.body.logo === "" || req.body.logo === null
+            ? undefined
+            : req.body.logo,
+        website:
+          req.body.website === "" || req.body.website === null
+            ? undefined
+            : req.body.website,
+        icaoCode:
+          req.body.icaoCode === "" || req.body.icaoCode === null
+            ? undefined
+            : req.body.icaoCode,
         description:
-          req.body.description === "" ? undefined : req.body.description,
+          req.body.description === "" || req.body.description === null
+            ? undefined
+            : req.body.description,
       };
 
       console.log("🧹 Cleaned body:", cleanedBody);
@@ -175,14 +183,25 @@ export class AirlineController {
     try {
       const { id } = req.params;
 
-      // Clean up empty strings to undefined for optional URL fields (same as create)
+      // Clean up empty strings and null values to undefined for optional fields
       const cleanedBody = {
         ...req.body,
-        logo: req.body.logo === "" ? undefined : req.body.logo,
-        website: req.body.website === "" ? undefined : req.body.website,
-        icaoCode: req.body.icaoCode === "" ? undefined : req.body.icaoCode,
+        logo:
+          req.body.logo === "" || req.body.logo === null
+            ? undefined
+            : req.body.logo,
+        website:
+          req.body.website === "" || req.body.website === null
+            ? undefined
+            : req.body.website,
+        icaoCode:
+          req.body.icaoCode === "" || req.body.icaoCode === null
+            ? undefined
+            : req.body.icaoCode,
         description:
-          req.body.description === "" ? undefined : req.body.description,
+          req.body.description === "" || req.body.description === null
+            ? undefined
+            : req.body.description,
       };
 
       console.log("🧹 Cleaned update body:", cleanedBody);
@@ -234,92 +253,6 @@ export class AirlineController {
       res.status(statusCode).json({
         success: false,
         message: error.message || "Failed to delete airline",
-      });
-    }
-  }
-
-  // GET /api/airlines/external/fetch
-  async fetchExternalAirlines(req: Request, res: Response) {
-    try {
-      const result = await this.externalAirlineService.fetchAirlines();
-
-      res.json({
-        success: result.success,
-        message: result.success
-          ? "External airlines fetched successfully"
-          : "Failed to fetch external airlines",
-        data: result.data,
-        source: result.source,
-        error: result.error,
-      });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || "Failed to fetch external airlines",
-      });
-    }
-  }
-
-  // GET /api/airlines/external/code/:code
-  async fetchExternalAirlineByCode(req: Request, res: Response) {
-    try {
-      const { code } = req.params;
-      const result = await this.externalAirlineService.fetchAirlineByCode(code);
-
-      res.json({
-        success: result.success,
-        message: result.success
-          ? "External airline fetched successfully"
-          : "Failed to fetch external airline",
-        data: result.data,
-        source: result.source,
-        error: result.error,
-      });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || "Failed to fetch external airline",
-      });
-    }
-  }
-
-  // POST /api/airlines/external/sync
-  async syncExternalAirlines(req: Request, res: Response) {
-    try {
-      const result =
-        await this.externalAirlineService.syncAirlinesFromExternal();
-
-      res.json({
-        success: result.success,
-        message: result.success ? "Sync completed successfully" : "Sync failed",
-        data: {
-          imported: result.imported,
-          skipped: result.skipped,
-          errors: result.errors,
-        },
-      });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || "Failed to sync external airlines",
-      });
-    }
-  }
-
-  // GET /api/airlines/external/providers
-  async getExternalProviders(req: Request, res: Response) {
-    try {
-      const providers = this.externalAirlineService.getAvailableProviders();
-
-      res.json({
-        success: true,
-        message: "External providers retrieved successfully",
-        data: providers,
-      });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || "Failed to get external providers",
       });
     }
   }
