@@ -5,7 +5,7 @@
 import { useState, useMemo, useEffect } from "react";
 import type { Promo, UUID } from "../types";
 import { clsx } from "../utils";
-import { Header, EmptyRow, Pagination, Modal, AddButton } from "../components/UI";
+import { Header, EmptyRow, Pagination, Modal, AddButton } from "../components/Components";
 import { useData } from "../contexts/DataContext";
 
 export function PromosManager() {

@@ -1,22 +1,7 @@
-// =============================================================
-// Airport Management Dashboard - CRUD interface untuk Airport
-// =============================================================
-
-import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Edit, Trash2, Power, MapPin, Plane, Globe, Building } from 'lucide-react';
-import type { Airport } from '../types';
-
-interface ApiResponse<T> {
-    success: boolean;
-    message: string;
-    data: T;
-    pagination?: {
-        page: number;
-        limit: number;
-        total: number;
-        pages: number;
-    };
-}
+import { useState, useEffect, useMemo } from 'react';
+import { DatabaseAirportService, type DatabaseAirport } from '../services/databaseAirportService';
+import { AddButton, Header, Pagination, Modal, EmptyRow } from '../components/Components';
+import { clsx } from "../utils";
 
 interface AirportFormData {
     name: string;
@@ -24,17 +9,14 @@ interface AirportFormData {
     icaoCode: string;
     cityId: string;
     countryId: string;
-    municipality?: string;
-    lat?: number;
-    lon?: number;
-    elevation?: number;
-    timezone?: string;
+    timezone: string;
     isActive: boolean;
 }
 
 interface Country {
     id: string;
     name: string;
+    code: string;
 }
 
 interface City {
@@ -42,816 +24,441 @@ interface City {
     name: string;
 }
 
-const AirportManagement = () => {
-    // States
-    const [airports, setAirports] = useState<Airport[]>([]);
+function AirportForm({ value, onCancel, onSubmit }: {
+    value: Partial<DatabaseAirport>;
+    onCancel: () => void;
+    onSubmit: (data: AirportFormData) => void;
+}) {
     const [countries, setCountries] = useState<Country[]>([]);
     const [cities, setCities] = useState<City[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [showModal, setShowModal] = useState(false);
-    const [editingAirport, setEditingAirport] = useState<Airport | null>(null);
-
-    // Pagination & Search
-    const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(0);
-    const [totalRecords, setTotalRecords] = useState(0);
-    const [pageSize, setPageSize] = useState(8);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCountry, setSelectedCountry] = useState('');
-    const [showActiveOnly, setShowActiveOnly] = useState(true); // Changed to true to show active airports by default
-
-    // Form
     const [formData, setFormData] = useState<AirportFormData>({
-        name: '',
-        iataCode: '',
-        icaoCode: '',
-        cityId: '',
-        countryId: '',
-        municipality: '',
-        lat: undefined,
-        lon: undefined,
-        elevation: undefined,
-        timezone: '',
+        name: value.name || '',
+        iataCode: value.iataCode || '',
+        icaoCode: value.icaoCode || '',
+        cityId: value.city?.id || '',
+        countryId: value.city?.country?.id || '',
+        timezone: value.timezone || 'UTC+0',
         isActive: true
     });
+    const [formLoading, setFormLoading] = useState(false);
 
-    // Fetch airports
-    const fetchAirports = useCallback(async (page = 1) => {
-        setLoading(true);
-        setError(null);
-
-        try {
-            const params = new URLSearchParams({
-                page: page.toString(),
-                limit: pageSize.toString(),
-                ...(searchQuery && { search: searchQuery }),
-                ...(selectedCountry && { country: selectedCountry })
-            });
-
-            // Only add isActive parameter if the checkbox is checked
-            if (showActiveOnly) {
-                params.append('isActive', 'true');
-            }
-
-            const response = await fetch(`http://localhost:3001/api/airports?${params}`);
-            const result: ApiResponse<Airport[]> = await response.json();
-
-            if (result.success) {
-                setAirports(result.data);
-                if (result.pagination) {
-                    setCurrentPage(result.pagination.page);
-                    setTotalPages(result.pagination.pages);
-                    setTotalRecords(result.pagination.total);
+    useEffect(() => {
+        const loadDropdownData = async () => {
+            try {
+                const response = await fetch('http://localhost:3001/api/db-airports/dropdown/countries');
+                const result = await response.json();
+                if (result.success) {
+                    setCountries(result.data);
                 }
-            } else {
-                setError(result.message);
+            } catch (err) {
+                console.error('Error loading countries:', err);
             }
-        } catch (err) {
-            setError('Gagal mengambil data airports');
-            console.error('Error:', err);
-        } finally {
-            setLoading(false);
-        }
-    }, [searchQuery, selectedCountry, showActiveOnly, pageSize]);
+        };
+        loadDropdownData();
+    }, []);
 
-    // Fetch dropdown data
-    const fetchDropdownData = async () => {
-        try {
-            const response = await fetch('http://localhost:3001/api/airports/dropdown/countries');
-            const result: ApiResponse<{ countries: Country[] }> = await response.json();
-
-            if (result.success) {
-                setCountries(result.data.countries);
+    useEffect(() => {
+        const loadCitiesByCountry = async (countryId: string) => {
+            if (!countryId) {
+                setCities([]);
+                return;
             }
-        } catch (err) {
-            console.error('Error fetching dropdown data:', err);
-        }
-    };
 
-    // Fetch cities by country
-    const fetchCitiesByCountry = async (countryId: string) => {
-        if (!countryId) {
-            setCities([]);
-            return;
-        }
-
-        try {
-            const response = await fetch(`http://localhost:3001/api/airports/dropdown/cities/${countryId}`);
-            const result: ApiResponse<City[]> = await response.json();
-
-            if (result.success) {
-                setCities(result.data);
+            try {
+                const response = await fetch(`http://localhost:3001/api/db-airports/dropdown/cities/${countryId}`);
+                const result = await response.json();
+                if (result.success) {
+                    setCities(result.data);
+                }
+            } catch (err) {
+                console.error('Error loading cities:', err);
             }
-        } catch (err) {
-            console.error('Error fetching cities:', err);
-        }
-    };
+        };
 
-    // Create or update airport
-    const handleSave = async (e: React.FormEvent) => {
+        if (formData.countryId) {
+            loadCitiesByCountry(formData.countryId);
+        }
+    }, [formData.countryId]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
-        setError(null);
-
+        setFormLoading(true);
         try {
-            const url = editingAirport
-                ? `http://localhost:3001/api/airports/${editingAirport.id}`
-                : 'http://localhost:3001/api/airports';
-            const method = editingAirport ? 'PUT' : 'POST';
-
-            const response = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
-
-            const result: ApiResponse<Airport> = await response.json();
-
-            if (result.success) {
-                setShowModal(false);
-                resetForm();
-                fetchAirports(currentPage);
-            } else {
-                setError(result.message);
-            }
-        } catch (err) {
-            setError('Gagal menyimpan airport');
-            console.error('Error:', err);
+            await onSubmit(formData);
         } finally {
-            setLoading(false);
+            setFormLoading(false);
         }
     };
-
-    // Delete airport
-    const handleDelete = async (id: string) => {
-        if (!confirm('Apakah Anda yakin ingin menghapus airport ini?')) return;
-
-        setLoading(true);
-        try {
-            const response = await fetch(`http://localhost:3001/api/airports/${id}`, {
-                method: 'DELETE'
-            });
-
-            const result: ApiResponse<null> = await response.json();
-
-            if (result.success) {
-                fetchAirports(currentPage);
-            } else {
-                setError(result.message);
-            }
-        } catch (err) {
-            setError('Gagal menghapus airport');
-            console.error('Error:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Toggle airport status
-    const handleToggleStatus = async (id: string) => {
-        setLoading(true);
-        try {
-            const response = await fetch(`http://localhost:3001/api/airports/${id}/toggle-status`, {
-                method: 'PATCH'
-            });
-
-            const result: ApiResponse<Airport> = await response.json();
-
-            if (result.success) {
-                fetchAirports(currentPage);
-            } else {
-                setError(result.message);
-            }
-        } catch (err) {
-            setError('Gagal mengubah status airport');
-            console.error('Error:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Form handlers
-    const resetForm = () => {
-        setFormData({
-            name: '',
-            iataCode: '',
-            icaoCode: '',
-            cityId: '',
-            countryId: '',
-            municipality: '',
-            lat: undefined,
-            lon: undefined,
-            elevation: undefined,
-            timezone: '',
-            isActive: true
-        });
-        setEditingAirport(null);
-        setCities([]);
-    };
-
-    const openEditModal = (airport: Airport) => {
-        setEditingAirport(airport);
-        setFormData({
-            name: airport.name,
-            iataCode: airport.iataCode || '',
-            icaoCode: airport.icaoCode || '',
-            cityId: airport.cityId,
-            countryId: airport.countryId,
-            municipality: airport.municipality || '',
-            lat: airport.lat || undefined,
-            lon: airport.lon || undefined,
-            elevation: airport.elevation || undefined,
-            timezone: airport.timezone || '',
-            isActive: airport.isActive
-        });
-
-        if (airport.countryId) {
-            fetchCitiesByCountry(airport.countryId);
-        }
-
-        setShowModal(true);
-    };
-
-    // Handle country change in form
-    const handleCountryChange = (countryId: string) => {
-        setFormData(prev => ({ ...prev, countryId, cityId: '' }));
-        fetchCitiesByCountry(countryId);
-    };
-
-    // Effects
-    useEffect(() => {
-        fetchAirports();
-        fetchDropdownData();
-    }, [fetchAirports]);
-
-    useEffect(() => {
-        fetchAirports(1);
-    }, [fetchAirports]);
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Manajemen Airport</h1>
-                    <p className="text-gray-600">Kelola data bandara untuk sistem booking</p>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Airport Name *
+                    </label>
+                    <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                        placeholder="Soekarno-Hatta International Airport"
+                    />
                 </div>
-                <button
-                    onClick={() => {
-                        resetForm();
-                        setShowModal(true);
-                    }}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                >
-                    <Plus size={16} />
-                    Tambah Airport
-                </button>
-            </div>
-
-            {/* Filters */}
-            <div className="bg-white p-4 rounded-lg shadow-sm border space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    {/* Search */}
-                    <div className="relative">
-                        <Search size={16} className="absolute left-3 top-3 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Cari nama, kode IATA/ICAO..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                    </div>
-
-                    {/* Country Filter */}
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                        IATA Code
+                    </label>
+                    <input
+                        type="text"
+                        value={formData.iataCode}
+                        onChange={(e) => setFormData({ ...formData, iataCode: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        maxLength={3}
+                        placeholder="CGK"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                        ICAO Code
+                    </label>
+                    <input
+                        type="text"
+                        value={formData.icaoCode}
+                        onChange={(e) => setFormData({ ...formData, icaoCode: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        maxLength={4}
+                        placeholder="WIII"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Country *
+                    </label>
                     <select
-                        value={selectedCountry}
-                        onChange={(e) => setSelectedCountry(e.target.value)}
-                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        value={formData.countryId}
+                        onChange={(e) => setFormData({ ...formData, countryId: e.target.value, cityId: '' })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
                     >
-                        <option value="">Semua Negara</option>
-                        {countries.map(country => (
-                            <option key={country.id} value={country.name}>
-                                {country.name}
+                        <option value="">Select country</option>
+                        {countries.map((country) => (
+                            <option key={country.id} value={country.id}>
+                                {country.name} ({country.code})
                             </option>
                         ))}
                     </select>
-
-                    {/* Active Filter */}
-                    <label className="flex items-center gap-2">
-                        <input
-                            type="checkbox"
-                            checked={showActiveOnly}
-                            onChange={(e) => setShowActiveOnly(e.target.checked)}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700">Hanya yang aktif</span>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                        City *
                     </label>
-
-                    {/* Stats */}
-                    <div className="text-sm text-gray-600">
-                        Total: <span className="font-semibold">{totalRecords}</span> airports
-                    </div>
+                    <select
+                        value={formData.cityId}
+                        onChange={(e) => setFormData({ ...formData, cityId: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                        disabled={!formData.countryId}
+                    >
+                        <option value="">Select city</option>
+                        {cities.map((city) => (
+                            <option key={city.id} value={city.id}>
+                                {city.name}
+                            </option>
+                        ))}
+                    </select>
                 </div>
             </div>
 
-            {/* Error Alert */}
-            {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                    {error}
-                </div>
-            )}
+            <div className="flex justify-end space-x-2 pt-4">
+                <button
+                    type="button"
+                    onClick={onCancel}
+                    className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                    disabled={formLoading}
+                >
+                    Cancel
+                </button>
+                <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    disabled={formLoading}
+                >
+                    {formLoading ? 'Saving...' : 'Save Airport'}
+                </button>
+            </div>
+        </form>
+    );
+}
 
-            {/* Airport Table */}
-            <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Airport
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Kode
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Lokasi
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Koordinat
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Status
-                                </th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Aksi
-                                </th>
+export function AirportsManager() {
+    const [airports, setAirports] = useState<DatabaseAirport[]>([]);
+    const [filteredAirports, setFilteredAirports] = useState<DatabaseAirport[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedFilter, setSelectedFilter] = useState<'all' | 'indonesian' | 'regional' | 'international'>('all');
+    const [showModal, setShowModal] = useState(false);
+    const [editingAirport, setEditingAirport] = useState<DatabaseAirport | null>(null);
+    const [page, setPage] = useState(1);
+    const [size, setSize] = useState(10);
+
+    useEffect(() => {
+        loadAirports();
+    }, []);
+
+    const loadAirports = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await DatabaseAirportService.getAllAirports();
+            setAirports(response);
+            setFilteredAirports(response);
+        } catch (err) {
+            console.error('Error loading airports:', err);
+            setError('Failed to connect to server');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        let filtered = airports;
+
+        if (searchTerm) {
+            filtered = filtered.filter(airport =>
+                airport.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                airport.iataCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                airport.icaoCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                airport.city.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                airport.city.country.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        if (selectedFilter !== 'all') {
+            filtered = filtered.filter(airport => {
+                switch (selectedFilter) {
+                    case 'indonesian':
+                        return airport.city.country.code === 'ID';
+                    case 'regional':
+                        return ['MY', 'SG', 'TH', 'VN', 'PH'].includes(airport.city.country.code);
+                    case 'international':
+                        return !['ID', 'MY', 'SG', 'TH', 'VN', 'PH'].includes(airport.city.country.code);
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        setFilteredAirports(filtered);
+        setPage(1);
+    }, [airports, searchTerm, selectedFilter]);
+
+    const paginatedAirports = useMemo(() => {
+        const startIndex = (page - 1) * size;
+        return filteredAirports.slice(startIndex, startIndex + size);
+    }, [filteredAirports, page, size]);
+
+    const totalPages = Math.ceil(filteredAirports.length / size);
+
+    const handleAddAirport = () => {
+        setEditingAirport(null);
+        setShowModal(true);
+    };
+
+    const handleEditAirport = (airport: DatabaseAirport) => {
+        setEditingAirport(airport);
+        setShowModal(true);
+    };
+
+    const handleDeleteAirport = async (airport: DatabaseAirport) => {
+        if (confirm(`Are you sure you want to delete ${airport.name}?`)) {
+            try {
+                await DatabaseAirportService.deleteAirport(airport.id);
+                await loadAirports();
+            } catch (err) {
+                console.error('Error deleting airport:', err);
+                alert('Failed to delete airport');
+            }
+        }
+    };
+
+    const handleSubmitForm = async (formData: AirportFormData) => {
+        try {
+            if (editingAirport) {
+                await fetch(`http://localhost:3001/api/db-airports/${editingAirport.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+            } else {
+                await fetch('http://localhost:3001/api/db-airports', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+            }
+            setShowModal(false);
+            await loadAirports();
+        } catch (err) {
+            console.error('Error saving airport:', err);
+            alert('Failed to save airport');
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="text-center space-y-4">
+                <h2 className="text-xl font-semibold text-red-600">Error Loading Airports</h2>
+                <p className="text-red-500">{error}</p>
+                <button
+                    onClick={loadAirports}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                    Retry
+                </button>
+            </div>
+        );
+    }
+
+    return (
+        <section className="space-y-3">
+            <Header title="Airports" subtitle="Kelola bandara dan lokasi">
+                <div className="flex items-center gap-2">
+                    <input
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        placeholder="Cari bandara, kode, atau kota..."
+                        className="input max-w-sm"
+                    />
+                    <select
+                        value={selectedFilter}
+                        onChange={(e) => setSelectedFilter(e.target.value as 'all' | 'indonesian' | 'regional' | 'international')}
+                        className="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    >
+                        <option value="all">All Airports</option>
+                        <option value="indonesian">Indonesian</option>
+                        <option value="regional">Regional</option>
+                        <option value="international">International</option>
+                    </select>
+                    <AddButton onClick={handleAddAirport}>
+                        Tambah Bandara
+                    </AddButton>
+                </div>
+            </Header>
+
+            <div className="card overflow-hidden">
+                <div className="overflow-x-auto custom-scrollbar">
+                    <table className="w-full text-left text-sm">
+                        <thead className="sticky top-0 z-10 bg-white/90 backdrop-blur dark:bg-slate-900/90">
+                            <tr className="border-b border-slate-200/30 dark:border-slate-700/30">
+                                <th className="py-4 px-3 font-semibold text-slate-600 dark:text-slate-400">Bandara</th>
+                                <th className="py-4 px-3 font-semibold text-slate-600 dark:text-slate-400">Kode</th>
+                                <th className="py-4 px-3 font-semibold text-slate-600 dark:text-slate-400">Lokasi</th>
+                                <th className="py-4 px-3 font-semibold text-slate-600 dark:text-slate-400">Timezone</th>
+                                <th className="py-4 px-3 font-semibold text-slate-600 dark:text-slate-400 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                                        <div className="flex items-center justify-center">
-                                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                                            <span className="ml-2">Loading...</span>
+                        <tbody>
+                            {paginatedAirports.map((airport, index) => (
+                                <tr
+                                    key={airport.id}
+                                    className={clsx(
+                                        "group border-b border-slate-200/20 dark:border-slate-700/20 transition-all duration-200 hover:bg-white/40 dark:hover:bg-slate-800/40",
+                                        index % 2 === 0 ? "bg-white/20 dark:bg-slate-800/20" : "bg-transparent"
+                                    )}
+                                >
+                                    <td className="py-4 px-3">
+                                        <div className="font-medium text-slate-900 dark:text-slate-100">
+                                            {airport.name}
+                                        </div>
+                                    </td>
+                                    <td className="py-4 px-3">
+                                        <div className="flex items-center gap-2">
+                                            {airport.iataCode && (
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-300 text-sm font-mono font-medium border border-blue-200/30 dark:border-blue-800/30">
+                                                    {airport.iataCode}
+                                                </span>
+                                            )}
+                                            {airport.icaoCode && (
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-purple-500/10 text-purple-700 dark:text-purple-300 text-sm font-mono font-medium border border-purple-200/30 dark:border-purple-800/30">
+                                                    {airport.icaoCode}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="py-4 px-3">
+                                        <div className="flex items-center gap-2">
+                                            <span className="inline-flex items-center px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
+                                                {airport.city.country.code}
+                                            </span>
+                                            <span className="text-slate-600 dark:text-slate-300">
+                                                {airport.city.name}, {airport.city.country.name}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td className="py-4 px-3">
+                                        <span className="text-slate-600 dark:text-slate-300 text-sm">
+                                            {airport.timezone || '-'}
+                                        </span>
+                                    </td>
+                                    <td className="py-4 px-3">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                onClick={() => handleEditAirport(airport)}
+                                                className="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-500/10 transition-all duration-200"
+                                                title="Edit airport"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteAirport(airport)}
+                                                className="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+                                                title="Delete airport"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
-                            ) : airports.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                                        <Plane size={48} className="mx-auto text-gray-300 mb-4" />
-                                        <p>Belum ada data airport</p>
-                                        <p className="text-sm">Klik "Tambah Airport" untuk menambah airport baru</p>
-                                    </td>
-                                </tr>
-                            ) : (
-                                airports.map((airport) => (
-                                    <tr key={airport.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center">
-                                                <div className="flex-shrink-0 h-10 w-10">
-                                                    <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                                                        <Plane size={20} className="text-blue-600" />
-                                                    </div>
-                                                </div>
-                                                <div className="ml-4">
-                                                    <div className="text-sm font-medium text-gray-900">
-                                                        {airport.name}
-                                                    </div>
-                                                    {airport.municipality && (
-                                                        <div className="text-sm text-gray-500">
-                                                            {airport.municipality}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="space-y-1">
-                                                {airport.iataCode && (
-                                                    <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                        IATA: {airport.iataCode}
-                                                    </div>
-                                                )}
-                                                {airport.icaoCode && (
-                                                    <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                        ICAO: {airport.icaoCode}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center text-sm text-gray-900">
-                                                <MapPin size={14} className="mr-1 text-gray-400" />
-                                                {airport.city?.name}, {airport.country?.name}
-                                            </div>
-                                            {airport.timezone && (
-                                                <div className="flex items-center text-sm text-gray-500">
-                                                    <Globe size={14} className="mr-1 text-gray-400" />
-                                                    {airport.timezone}
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-500">
-                                            {airport.lat && airport.lon ? (
-                                                <div>
-                                                    <div>{airport.lat.toFixed(4)}°N</div>
-                                                    <div>{airport.lon.toFixed(4)}°E</div>
-                                                    {airport.elevation && (
-                                                        <div className="flex items-center">
-                                                            <Building size={12} className="mr-1" />
-                                                            {airport.elevation}m
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <span className="text-gray-400">-</span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${airport.isActive
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-red-100 text-red-800'
-                                                }`}>
-                                                {airport.isActive ? 'Aktif' : 'Tidak Aktif'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right text-sm font-medium">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button
-                                                    onClick={() => handleToggleStatus(airport.id)}
-                                                    className={`p-2 rounded-lg transition-colors ${airport.isActive
-                                                        ? 'text-orange-600 hover:bg-orange-50'
-                                                        : 'text-green-600 hover:bg-green-50'
-                                                        }`}
-                                                    title={airport.isActive ? 'Nonaktifkan' : 'Aktifkan'}
-                                                >
-                                                    <Power size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => openEditModal(airport)}
-                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                    title="Edit"
-                                                >
-                                                    <Edit size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(airport.id)}
-                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Hapus"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
+                            ))}
+                            {paginatedAirports.length === 0 && (
+                                <EmptyRow colSpan={5} message="No airports found. Add your first airport to get started." />
                             )}
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-                <div className="flex items-center justify-between px-6 py-3">
-                    <div className="flex items-center gap-4">
-                        <div className="text-sm text-gray-700">
-                            Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalRecords)} of {totalRecords} results
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-700">
-                            <span>Show:</span>
-                            <select
-                                value={pageSize}
-                                onChange={(e) => {
-                                    setPageSize(Number(e.target.value));
-                                    setCurrentPage(1);
-                                    fetchAirports(1);
-                                }}
-                                className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent"
-                            >
-                                <option value={5}>5</option>
-                                <option value={8}>8</option>
-                                <option value={10}>10</option>
-                                <option value={15}>15</option>
-                                <option value={20}>20</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        {/* First page button */}
-                        <button
-                            onClick={() => fetchAirports(1)}
-                            disabled={currentPage <= 1}
-                            className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
-                            title="First page"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-                            </svg>
-                        </button>
+            <Pagination page={page} pages={totalPages} size={size} onPage={setPage} onSize={setSize} />
 
-                        {/* Previous page button */}
-                        <button
-                            onClick={() => fetchAirports(currentPage - 1)}
-                            disabled={currentPage <= 1}
-                            className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
-                            title="Previous page"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                            </svg>
-                        </button>
-
-                        {/* Page numbers */}
-                        <div className="flex items-center gap-1">
-                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                const page = Math.max(1, currentPage - 2) + i;
-                                if (page > totalPages) return null;
-
-                                return (
-                                    <button
-                                        key={page}
-                                        onClick={() => fetchAirports(page)}
-                                        className={`w-8 h-8 text-sm rounded ${currentPage === page
-                                            ? 'bg-blue-600 text-white'
-                                            : 'text-gray-600 hover:bg-gray-100'
-                                            }`}
-                                    >
-                                        {page}
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        {/* Next page button */}
-                        <button
-                            onClick={() => fetchAirports(currentPage + 1)}
-                            disabled={currentPage >= totalPages}
-                            className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
-                            title="Next page"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                        </button>
-
-                        {/* Last page button */}
-                        <button
-                            onClick={() => fetchAirports(totalPages)}
-                            disabled={currentPage >= totalPages}
-                            className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
-                            title="Last page"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal Form */}
             {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-                    <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-                        {/* Modal Header */}
-                        <div className="px-6 py-4 border-b border-gray-200 bg-white rounded-t-lg">
-                            <h2 className="text-lg font-semibold text-gray-900">
-                                {editingAirport ? 'Edit Airport' : 'Tambah Airport Baru'}
-                            </h2>
-                        </div>
-
-                        {/* Modal Body */}
-                        <form onSubmit={handleSave} className="px-6 py-4 space-y-4">
-                            {/* Basic Info */}
-                            <div className="space-y-4">
-                                <h3 className="text-md font-medium text-gray-900">Informasi Dasar</h3>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Nama Airport *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={formData.name}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="Soekarno-Hatta International Airport"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Municipality
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.municipality || ''}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, municipality: e.target.value }))}
-                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="Jakarta"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Kode IATA
-                                        </label>
-                                        <input
-                                            type="text"
-                                            maxLength={3}
-                                            value={formData.iataCode}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, iataCode: e.target.value.toUpperCase() }))}
-                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="CGK"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Kode ICAO
-                                        </label>
-                                        <input
-                                            type="text"
-                                            maxLength={4}
-                                            value={formData.icaoCode}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, icaoCode: e.target.value.toUpperCase() }))}
-                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="WIII"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Location */}
-                            <div className="space-y-4">
-                                <h3 className="text-md font-medium text-gray-900">Lokasi</h3>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Negara *
-                                        </label>
-                                        <select
-                                            required
-                                            value={formData.countryId}
-                                            onChange={(e) => handleCountryChange(e.target.value)}
-                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        >
-                                            <option value="">Pilih Negara</option>
-                                            {countries.map(country => (
-                                                <option key={country.id} value={country.id}>
-                                                    {country.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Kota *
-                                        </label>
-                                        <select
-                                            required
-                                            value={formData.cityId}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, cityId: e.target.value }))}
-                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            disabled={!formData.countryId}
-                                        >
-                                            <option value="">Pilih Kota</option>
-                                            {cities.map(city => (
-                                                <option key={city.id} value={city.id}>
-                                                    {city.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Coordinates */}
-                            <div className="space-y-4">
-                                <h3 className="text-md font-medium text-gray-900">Koordinat & Detail</h3>
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Latitude
-                                        </label>
-                                        <input
-                                            type="number"
-                                            step="any"
-                                            min={-90}
-                                            max={90}
-                                            value={formData.lat || ''}
-                                            onChange={(e) => setFormData(prev => ({
-                                                ...prev,
-                                                lat: e.target.value ? parseFloat(e.target.value) : undefined
-                                            }))}
-                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="-6.1256"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Longitude
-                                        </label>
-                                        <input
-                                            type="number"
-                                            step="any"
-                                            min={-180}
-                                            max={180}
-                                            value={formData.lon || ''}
-                                            onChange={(e) => setFormData(prev => ({
-                                                ...prev,
-                                                lon: e.target.value ? parseFloat(e.target.value) : undefined
-                                            }))}
-                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="106.6551"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Elevation (meter)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min={-500}
-                                            value={formData.elevation || ''}
-                                            onChange={(e) => setFormData(prev => ({
-                                                ...prev,
-                                                elevation: e.target.value ? parseInt(e.target.value) : undefined
-                                            }))}
-                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="8"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Timezone
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.timezone || ''}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, timezone: e.target.value }))}
-                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="Asia/Jakarta"
-                                        />
-                                    </div>
-
-                                    <div className="flex items-center">
-                                        <label className="flex items-center gap-2">
-                                            <input
-                                                type="checkbox"
-                                                checked={formData.isActive}
-                                                onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                            />
-                                            <span className="text-sm text-gray-700">Airport Aktif</span>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Modal Footer */}
-                            <div className="flex items-center justify-end gap-3 pt-4 border-t">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setShowModal(false);
-                                        resetForm();
-                                        setError(null);
-                                    }}
-                                    className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                >
-                                    {loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>}
-                                    {editingAirport ? 'Update' : 'Simpan'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                <Modal
+                    onClose={() => setShowModal(false)}
+                    title={editingAirport ? "Edit Airport" : "Add New Airport"}
+                >
+                    <AirportForm
+                        value={editingAirport || {}}
+                        onCancel={() => setShowModal(false)}
+                        onSubmit={handleSubmitForm}
+                    />
+                </Modal>
             )}
-        </div>
+        </section>
     );
-};
+}
 
-export default AirportManagement;
+export default AirportsManager;

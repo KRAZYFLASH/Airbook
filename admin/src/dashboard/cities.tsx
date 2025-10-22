@@ -3,7 +3,7 @@
 // =============================================================
 
 import { useState, useEffect } from 'react';
-import { Pagination, Modal } from '../components/UI';
+import { Pagination, Modal } from '../components/Components';
 import { CityIcon } from '../components/Icons';
 import { clsx } from '../utils';
 

@@ -1,5 +1,4 @@
-import { KPIBar } from "../components/KPIBar";
-import { AirlineIcon, ScheduleIcon, PromoIcon } from "../components/Icons";
+import { Chart } from "../components/Chart";
 import { useData } from "../contexts/DataContext";
 
 // ============== Dashboard View =================
@@ -51,7 +50,7 @@ export function DashboardView() {
       </div>
 
       {/* KPI Cards */}
-      <KPIBar airlines={airlines} schedules={schedules} promos={promos} />
+      <Chart airlines={airlines} schedules={schedules} promos={promos} />
 
       {/* Operational Insights */}
       <div className="grid gap-6 lg:grid-cols-3">

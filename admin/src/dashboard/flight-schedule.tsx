@@ -5,9 +5,9 @@
 import { useState, useMemo, useEffect } from "react";
 import type { Airline, FlightSchedule, UUID } from "../types";
 import { clsx, rupiah } from "../utils";
-import { Header, EmptyRow, Pagination, Modal, AddButton } from "../components/UI";
+import { Header, EmptyRow, Pagination, Modal, AddButton } from "../components/Components";
 import { useData } from "../contexts/DataContext";
-import { AirportService } from "../services/airportService";
+// import { AirportService } from "../services/airportService";
 
 // Interface for database airports
 interface DatabaseAirport {
@@ -853,8 +853,8 @@ function ScheduleForm({ value, onSubmit, onCancel, airlines, getAllAirports, get
                   <input
                     type="date"
                     className={`w-full px-3 py-2 rounded-lg border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 transition-all duration-200 text-sm ${form.departure && form.arrival && !datetimeValid
-                        ? "border-red-300 dark:border-red-600 focus:ring-red-500 focus:border-red-500"
-                        : "border-slate-300 dark:border-slate-600 focus:ring-purple-500 focus:border-purple-500"
+                      ? "border-red-300 dark:border-red-600 focus:ring-red-500 focus:border-red-500"
+                      : "border-slate-300 dark:border-slate-600 focus:ring-purple-500 focus:border-purple-500"
                       }`}
                     value={form.departure?.split('T')[0] ?? ""}
                     onChange={(e) => {
@@ -870,8 +870,8 @@ function ScheduleForm({ value, onSubmit, onCancel, airlines, getAllAirports, get
                   <input
                     type="time"
                     className={`w-full px-3 py-2 rounded-lg border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 transition-all duration-200 text-sm ${form.departure && form.arrival && !datetimeValid
-                        ? "border-red-300 dark:border-red-600 focus:ring-red-500 focus:border-red-500"
-                        : "border-slate-300 dark:border-slate-600 focus:ring-purple-500 focus:border-purple-500"
+                      ? "border-red-300 dark:border-red-600 focus:ring-red-500 focus:border-red-500"
+                      : "border-slate-300 dark:border-slate-600 focus:ring-purple-500 focus:border-purple-500"
                       }`}
                     value={form.departure?.split('T')[1]?.slice(0, 5) ?? ""}
                     onChange={(e) => {
@@ -896,10 +896,10 @@ function ScheduleForm({ value, onSubmit, onCancel, airlines, getAllAirports, get
                   <input
                     type="date"
                     className={`w-full px-3 py-2 rounded-lg border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 transition-all duration-200 text-sm ${form.departure && form.arrival && !datetimeValid
-                        ? "border-red-300 dark:border-red-600 focus:ring-red-500 focus:border-red-500"
-                        : form.departure && form.arrival && datetimeValid && !hasMinimumDuration
-                          ? "border-orange-300 dark:border-orange-600 focus:ring-orange-500 focus:border-orange-500"
-                          : "border-slate-300 dark:border-slate-600 focus:ring-emerald-500 focus:border-emerald-500"
+                      ? "border-red-300 dark:border-red-600 focus:ring-red-500 focus:border-red-500"
+                      : form.departure && form.arrival && datetimeValid && !hasMinimumDuration
+                        ? "border-orange-300 dark:border-orange-600 focus:ring-orange-500 focus:border-orange-500"
+                        : "border-slate-300 dark:border-slate-600 focus:ring-emerald-500 focus:border-emerald-500"
                       }`}
                     value={form.arrival?.split('T')[0] ?? ""}
                     onChange={(e) => {
@@ -915,10 +915,10 @@ function ScheduleForm({ value, onSubmit, onCancel, airlines, getAllAirports, get
                   <input
                     type="time"
                     className={`w-full px-3 py-2 rounded-lg border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 transition-all duration-200 text-sm ${form.departure && form.arrival && !datetimeValid
-                        ? "border-red-300 dark:border-red-600 focus:ring-red-500 focus:border-red-500"
-                        : form.departure && form.arrival && datetimeValid && !hasMinimumDuration
-                          ? "border-orange-300 dark:border-orange-600 focus:ring-orange-500 focus:border-orange-500"
-                          : "border-slate-300 dark:border-slate-600 focus:ring-emerald-500 focus:border-emerald-500"
+                      ? "border-red-300 dark:border-red-600 focus:ring-red-500 focus:border-red-500"
+                      : form.departure && form.arrival && datetimeValid && !hasMinimumDuration
+                        ? "border-orange-300 dark:border-orange-600 focus:ring-orange-500 focus:border-orange-500"
+                        : "border-slate-300 dark:border-slate-600 focus:ring-emerald-500 focus:border-emerald-500"
                       }`}
                     value={form.arrival?.split('T')[1]?.slice(0, 5) ?? ""}
                     onChange={(e) => {

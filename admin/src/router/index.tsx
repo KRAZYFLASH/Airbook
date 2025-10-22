@@ -1,167 +1,56 @@
 // =============================================================
-// AirBook Admin — Router Configuration
+// AirBook Admin — Router Configuration (Simplified)
 // =============================================================
 
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider } from "../contexts/AuthContext";
 import { DataProvider } from "../contexts/DataContext";
-import { ProtectedRoute } from "../components/ProtectedRoute";
-import { AdminLayout } from "../components/AdminLayout";
+import { ProtectedRoute } from "../components/Auth";
+import { AdminLayout } from "../components/Layout";
+
+// Pages
 import { DashboardView } from "../dashboard/dashboard";
-import { AirlinesManager } from "../dashboard/airlines_styled";
-import { SchedulesManager } from "../dashboard/flightSchedule";
-import { PromosManager } from "../dashboard/promotion";
-import DatabaseAirportsStyled from "../dashboard/databaseAirports_styled";
+import AirlinesManager from "../dashboard/airlines";
+import { SchedulesManager } from "../dashboard/flight-schedule";
+import { PromosManager } from "../dashboard/promotions";
+import AirportsManager from "../dashboard/airports";
 import { CountriesManager } from "../dashboard/countries";
 import { CitiesManager } from "../dashboard/cities";
 
-// Layout Wrapper Component
-function LayoutWrapper({ children }: { children: React.ReactNode }) {
+// ---------------------------------------------------------------------
+// Root layout: wraps all pages with Providers + Auth guard + Admin shell
+// ---------------------------------------------------------------------
+function RootLayout() {
     return (
-        <DataProvider>
-            <AdminLayout>
-                {children}
-            </AdminLayout>
-        </DataProvider>
+        <AuthProvider>
+            <ProtectedRoute>
+                <DataProvider>
+                    <AdminLayout>
+                        <Outlet />
+                    </AdminLayout>
+                </DataProvider>
+            </ProtectedRoute>
+        </AuthProvider>
     );
 }
 
-// Route Components
-function DashboardPage() {
-    return <DashboardView />;
-}
-
-function AirlinesPage() {
-    return <AirlinesManager />;
-}
-
-function FlightSchedulePage() {
-    return <SchedulesManager />;
-}
-
-function PromotionsPage() {
-    return <PromosManager />;
-}
-
-function AirportsPage() {
-    return <DatabaseAirportsStyled />;
-}
-
-function CountriesPage() {
-    return <CountriesManager />;
-}
-
-function CitiesPage() {
-    return <CitiesManager />;
-}
-
+// ---------------------------------------------------------------------
+// Router (nested routes, no repetition)
+// ---------------------------------------------------------------------
 export const router = createBrowserRouter([
     {
         path: "/",
-        element: (
-            <AuthProvider>
-                <ProtectedRoute>
-                    <LayoutWrapper>
-                        <Navigate to="/dashboard" replace />
-                    </LayoutWrapper>
-                </ProtectedRoute>
-            </AuthProvider>
-        ),
-    },
-    {
-        path: "/dashboard",
-        element: (
-            <AuthProvider>
-                <ProtectedRoute>
-                    <LayoutWrapper>
-                        <DashboardPage />
-                    </LayoutWrapper>
-                </ProtectedRoute>
-            </AuthProvider>
-        ),
-    },
-    {
-        path: "/airlines",
-        element: (
-            <AuthProvider>
-                <ProtectedRoute>
-                    <LayoutWrapper>
-                        <AirlinesPage />
-                    </LayoutWrapper>
-                </ProtectedRoute>
-            </AuthProvider>
-        ),
-    },
-    {
-        path: "/flightSchedule",
-        element: (
-            <AuthProvider>
-                <ProtectedRoute>
-                    <LayoutWrapper>
-                        <FlightSchedulePage />
-                    </LayoutWrapper>
-                </ProtectedRoute>
-            </AuthProvider>
-        ),
-    },
-    {
-        path: "/promotions",
-        element: (
-            <AuthProvider>
-                <ProtectedRoute>
-                    <LayoutWrapper>
-                        <PromotionsPage />
-                    </LayoutWrapper>
-                </ProtectedRoute>
-            </AuthProvider>
-        ),
-    },
-    {
-        path: "/airports",
-        element: (
-            <AuthProvider>
-                <ProtectedRoute>
-                    <LayoutWrapper>
-                        <AirportsPage />
-                    </LayoutWrapper>
-                </ProtectedRoute>
-            </AuthProvider>
-        ),
-    },
-    {
-        path: "/countries",
-        element: (
-            <AuthProvider>
-                <ProtectedRoute>
-                    <LayoutWrapper>
-                        <CountriesPage />
-                    </LayoutWrapper>
-                </ProtectedRoute>
-            </AuthProvider>
-        ),
-    },
-    {
-        path: "/cities",
-        element: (
-            <AuthProvider>
-                <ProtectedRoute>
-                    <LayoutWrapper>
-                        <CitiesPage />
-                    </LayoutWrapper>
-                </ProtectedRoute>
-            </AuthProvider>
-        ),
-    },
-    {
-        path: "*",
-        element: (
-            <AuthProvider>
-                <ProtectedRoute>
-                    <LayoutWrapper>
-                        <Navigate to="/dashboard" replace />
-                    </LayoutWrapper>
-                </ProtectedRoute>
-            </AuthProvider>
-        ),
+        element: <RootLayout />,
+        children: [
+            { index: true, element: <Navigate to="dashboard" replace /> },
+            { path: "dashboard", element: <DashboardView /> },
+            { path: "airlines", element: <AirlinesManager /> },
+            { path: "flightSchedule", element: <SchedulesManager /> },
+            { path: "promotions", element: <PromosManager /> },
+            { path: "airports", element: <AirportsManager /> },
+            { path: "countries", element: <CountriesManager /> },
+            { path: "cities", element: <CitiesManager /> },
+            { path: "*", element: <Navigate to="/dashboard" replace /> },
+        ],
     },
 ]);
