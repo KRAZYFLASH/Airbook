@@ -6,7 +6,7 @@ import { Router } from "express";
 import { AirportController } from "./airport.controller";
 import { AirportService } from "./airport.service";
 import { AirportRepository } from "./airport.repository";
-import { prisma } from "../../db/prisma";
+import { prisma } from "../../../db/prisma";
 
 // Create router
 const router = Router();

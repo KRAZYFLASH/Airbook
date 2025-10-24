@@ -2,7 +2,7 @@
 // AirBook Admin — Flight Schedules Manager
 // =============================================================
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import type { Airline, FlightSchedule, UUID } from "../types";
 import { clsx, rupiah } from "../utils";
 import { Header, EmptyRow, Pagination, Modal, AddButton } from "../components/Components";
@@ -69,7 +69,7 @@ export function SchedulesManager() {
   }, []);
 
   // Helper function to get all available airports (database + static)
-  const getAllAirports = () => {
+  const getAllAirports = useCallback(() => {
     const dbAirports = databaseAirports
       .filter(airport => airport.iataCode) // Only airports with IATA codes
       .map(airport => ({
@@ -108,7 +108,7 @@ export function SchedulesManager() {
     // console.log("🚀 getAllAirports - Final unique:", unique.length);
 
     // return unique;
-  };
+  }, [databaseAirports]);
 
   // Helper function for display text
   const getAirportDisplayText = (iataCode: string) => {
@@ -125,23 +125,65 @@ export function SchedulesManager() {
   };
 
   // Get airport info from combined data (database + static)
-  const getAirportInfo = (iataCode: string) => {
+  const getAirportInfo = useCallback((iataCode: string) => {
     const airport = getAllAirports().find(a => a.iata === iataCode);
     return airport ? { city: airport.city, name: airport.name, country: airport.country } : null;
-  };
+  }, [getAllAirports]);
 
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<FlightSchedule | null>(null);
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(8);
 
+  // Enhanced filter states
+  const [filterAirline, setFilterAirline] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterClass, setFilterClass] = useState<string>("all");
+  const [filterRouteType, setFilterRouteType] = useState<string>("all"); // domestik/internasional
+  const [filterDateFrom, setFilterDateFrom] = useState<string>("");
+  const [filterDateTo, setFilterDateTo] = useState<string>("");
+
+  // Helper function to determine route type
+  const getRouteType = useCallback((origin: string, destination: string) => {
+    const originInfo = getAirportInfo(origin);
+    const destInfo = getAirportInfo(destination);
+
+    if (!originInfo || !destInfo) return "unknown";
+
+    return originInfo.country === destInfo.country ? "domestik" : "internasional";
+  }, [getAirportInfo]);
+
   const rows = useMemo(() => {
     const lower = q.toLowerCase();
-    return schedules.filter(s =>
-      [s.flightNo, s.origin, s.destination, airlines.find(a => a.id === s.airlineId)?.name, s.classType]
-        .some(x => x?.toLowerCase().includes(lower))
-    );
-  }, [q, schedules, airlines]);
+    return schedules.filter(s => {
+      // Basic search filter
+      const matchesSearch = [s.flightNo, s.origin, s.destination, airlines.find(a => a.id === s.airlineId)?.name, s.classType]
+        .some(x => x?.toLowerCase().includes(lower));
+
+      // Airline filter
+      const matchesAirline = filterAirline === "all" || s.airlineId === filterAirline;
+
+      // Status filter
+      const matchesStatus = filterStatus === "all" || s.status === filterStatus;
+
+      // Class filter
+      const matchesClass = filterClass === "all" || s.classType === filterClass;
+
+      // Route type filter
+      const routeType = getRouteType(s.origin, s.destination);
+      const matchesRouteType = filterRouteType === "all" || routeType === filterRouteType;
+
+      // Date filter
+      let matchesDate = true;
+      if (filterDateFrom || filterDateTo) {
+        const scheduleDate = new Date(s.departure).toISOString().split('T')[0];
+        if (filterDateFrom && scheduleDate < filterDateFrom) matchesDate = false;
+        if (filterDateTo && scheduleDate > filterDateTo) matchesDate = false;
+      }
+
+      return matchesSearch && matchesAirline && matchesStatus && matchesClass && matchesRouteType && matchesDate;
+    });
+  }, [q, schedules, airlines, filterAirline, filterStatus, filterClass, filterRouteType, filterDateFrom, filterDateTo, getRouteType]);
 
   const paged = useMemo(() => {
     const start = (page - 1) * size;
@@ -305,6 +347,124 @@ export function SchedulesManager() {
           </AddButton>
         </div>
       </Header>
+
+      {/* Advanced Filters */}
+      <div className="card p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">🔍 Filter Lanjutan</h3>
+          <button
+            onClick={() => {
+              setFilterAirline("all");
+              setFilterStatus("all");
+              setFilterClass("all");
+              setFilterRouteType("all");
+              setFilterDateFrom("");
+              setFilterDateTo("");
+            }}
+            className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+          >
+            Reset Filter
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
+          {/* Airline Filter */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Maskapai</label>
+            <select
+              value={filterAirline}
+              onChange={(e) => setFilterAirline(e.target.value)}
+              className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 dark:border-slate-600"
+            >
+              <option value="all">Semua Maskapai</option>
+              {airlines.map((airline) => (
+                <option key={airline.id} value={airline.id}>
+                  {airline.code} - {airline.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Status Filter */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Status</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 dark:border-slate-600"
+            >
+              <option value="all">Semua Status</option>
+              <option value="SCHEDULED">✅ Scheduled</option>
+              <option value="DELAYED">⏰ Delayed</option>
+              <option value="CANCELLED">❌ Cancelled</option>
+              <option value="COMPLETED">🏁 Completed</option>
+            </select>
+          </div>
+
+          {/* Class Filter */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Kelas</label>
+            <select
+              value={filterClass}
+              onChange={(e) => setFilterClass(e.target.value)}
+              className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 dark:border-slate-600"
+            >
+              <option value="all">Semua Kelas</option>
+              <option value="ECONOMY">💺 Economy</option>
+              <option value="BUSINESS">🛋️ Business</option>
+              <option value="FIRST">👑 First Class</option>
+            </select>
+          </div>
+
+          {/* Route Type Filter */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Tipe Rute</label>
+            <select
+              value={filterRouteType}
+              onChange={(e) => setFilterRouteType(e.target.value)}
+              className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 dark:border-slate-600"
+            >
+              <option value="all">Semua Rute</option>
+              <option value="domestik">🏠 Domestik</option>
+              <option value="internasional">🌍 Internasional</option>
+            </select>
+          </div>
+
+          {/* Date From Filter */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Dari Tanggal</label>
+            <input
+              type="date"
+              value={filterDateFrom}
+              onChange={(e) => setFilterDateFrom(e.target.value)}
+              className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 dark:border-slate-600"
+            />
+          </div>
+
+          {/* Date To Filter */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Sampai Tanggal</label>
+            <input
+              type="date"
+              value={filterDateTo}
+              onChange={(e) => setFilterDateTo(e.target.value)}
+              className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 dark:border-slate-600"
+            />
+          </div>
+        </div>
+
+        {/* Filter Results Info */}
+        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-slate-700">
+          <span>
+            Menampilkan {rows.length} dari {schedules.length} jadwal penerbangan
+          </span>
+          {(filterAirline !== "all" || filterStatus !== "all" || filterClass !== "all" || filterRouteType !== "all" || filterDateFrom || filterDateTo) && (
+            <span className="text-blue-600 font-medium">
+              Filter aktif
+            </span>
+          )}
+        </div>
+      </div>
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto custom-scrollbar">
@@ -1064,9 +1224,9 @@ function ScheduleForm({ value, onSubmit, onCancel, airlines, getAllAirports, get
               }`}
             type="submit"
             disabled={
-              (form.origin && form.destination && form.origin === form.destination) ||
-              (form.departure && form.arrival && !datetimeValid) ||
-              (form.departure && form.arrival && datetimeValid && !hasMinimumDuration)
+              Boolean(form.origin && form.destination && form.origin === form.destination) ||
+              Boolean(form.departure && form.arrival && !datetimeValid) ||
+              Boolean(form.departure && form.arrival && datetimeValid && !hasMinimumDuration)
             }
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,10 +1,13 @@
-﻿import { Router } from 'express';
-import { AuthController } from './auth.controller';
+import { Router } from "express";
+import { adminAuthRoutes } from "./admin";
+import { userAuthRoutes } from "./user";
 
 const router = Router();
-const authController = new AuthController();
 
-router.post('/register', authController.register);
-router.post('/login', authController.login);
+// Admin authentication routes
+router.use("/admin", adminAuthRoutes);
+
+// User authentication routes
+router.use("/user", userAuthRoutes);
 
 export default router;

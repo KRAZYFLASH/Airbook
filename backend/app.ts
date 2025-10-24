@@ -1,15 +1,8 @@
 import express from "express";
 import cors from "cors";
 import { authRoutes } from "./modules/auth";
-import destinationRoutes from "./modules/destination/destination.routes";
-import { bookingRoutes } from "./modules/User/booking";
-import { airlineRoutes } from "./modules/airlines";
-import { flightScheduleRoutes } from "./modules/flight-schedule";
-import { promotionRoutes } from "./modules/promotion";
-import { airportRoutes } from "./modules/airports";
-import databaseAirportRoutes from "./modules/airports/database-airport.routes";
-import countriesRoutes from "./modules/countries/countries.routes";
-import citiesRoutes from "./modules/cities/cities.routes";
+import { setupAdminRoutes } from "./modules/admin";
+import { setupUserRoutes } from "./modules/user";
 import { requestLogger } from "./common/middleware";
 
 const app = express();
@@ -38,18 +31,12 @@ app.use((req, res, next) => {
 
 // API Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/destinations", destinationRoutes);
-app.use("/api/bookings", bookingRoutes);
-app.use("/api/airlines", airlineRoutes);
-app.use("/api/flight-schedules", flightScheduleRoutes);
-app.use("/api/promotions", promotionRoutes);
-app.use("/api/airports", airportRoutes);
-app.use("/api/db-airports", databaseAirportRoutes);
-// Debug: Countries and Cities Routes
-console.log("🌍 Mounting countries routes at /api");
-app.use("/api", countriesRoutes);
-console.log("🏙️ Mounting cities routes at /api");
-app.use("/api", citiesRoutes);
+
+// Admin routes (airlines, airports, cities, countries, flight-schedules, promotions)
+app.use("/api", setupAdminRoutes());
+
+// User routes (bookings, destinations)
+app.use("/api", setupUserRoutes());
 
 // Health check
 app.get("/api/health", (req, res) => {

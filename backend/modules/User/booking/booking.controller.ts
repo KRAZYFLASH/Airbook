@@ -5,15 +5,7 @@ import {
   UpdateBookingSchema,
   BookingQuerySchema,
 } from "./booking.schema";
-
-// Extend Request to include user info
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    role: string;
-  };
-}
+import "../../../common/types/auth.types"; // Import global type extensions
 
 export class BookingController {
   private bookingService: BookingService;
@@ -23,12 +15,9 @@ export class BookingController {
   }
 
   // POST /api/bookings - Create new booking
-  createBooking = async (
-    req: AuthenticatedRequest,
-    res: Response
-  ): Promise<void> => {
+  createBooking = async (req: Request, res: Response): Promise<void> => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.userId;
       if (!userId) {
         res.status(401).json({
           success: false,
@@ -68,13 +57,10 @@ export class BookingController {
   };
 
   // GET /api/bookings/:id - Get booking by ID
-  getBookingById = async (
-    req: AuthenticatedRequest,
-    res: Response
-  ): Promise<void> => {
+  getBookingById = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const userId = req.user?.role === "ADMIN" ? undefined : req.user?.id;
+      const userId = req.user?.role === "ADMIN" ? undefined : req.user?.userId;
 
       const result = await this.bookingService.getBookingById(id, userId);
 
@@ -99,12 +85,12 @@ export class BookingController {
 
   // GET /api/bookings/reference/:reference - Get booking by reference
   getBookingByReference = async (
-    req: AuthenticatedRequest,
+    req: Request,
     res: Response
   ): Promise<void> => {
     try {
       const { reference } = req.params;
-      const userId = req.user?.role === "ADMIN" ? undefined : req.user?.id;
+      const userId = req.user?.role === "ADMIN" ? undefined : req.user?.userId;
 
       const result = await this.bookingService.getBookingByReference(
         reference,
@@ -131,12 +117,9 @@ export class BookingController {
   };
 
   // GET /api/bookings/my - Get current user's bookings
-  getMyBookings = async (
-    req: AuthenticatedRequest,
-    res: Response
-  ): Promise<void> => {
+  getMyBookings = async (req: Request, res: Response): Promise<void> => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.userId;
       if (!userId) {
         res.status(401).json({
           success: false,
@@ -178,10 +161,7 @@ export class BookingController {
   };
 
   // GET /api/bookings - Get all bookings (admin only)
-  getAllBookings = async (
-    req: AuthenticatedRequest,
-    res: Response
-  ): Promise<void> => {
+  getAllBookings = async (req: Request, res: Response): Promise<void> => {
     try {
       // Check admin role
       if (req.user?.role !== "ADMIN") {
@@ -224,13 +204,10 @@ export class BookingController {
   };
 
   // PUT /api/bookings/:id - Update booking
-  updateBooking = async (
-    req: AuthenticatedRequest,
-    res: Response
-  ): Promise<void> => {
+  updateBooking = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const userId = req.user?.role === "ADMIN" ? undefined : req.user?.id;
+      const userId = req.user?.role === "ADMIN" ? undefined : req.user?.userId;
 
       // Validate request body
       const validation = UpdateBookingSchema.safeParse(req.body);
@@ -269,13 +246,10 @@ export class BookingController {
   };
 
   // PUT /api/bookings/:id/cancel - Cancel booking
-  cancelBooking = async (
-    req: AuthenticatedRequest,
-    res: Response
-  ): Promise<void> => {
+  cancelBooking = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const userId = req.user?.role === "ADMIN" ? undefined : req.user?.id;
+      const userId = req.user?.role === "ADMIN" ? undefined : req.user?.userId;
 
       const result = await this.bookingService.cancelBooking(id, userId);
 

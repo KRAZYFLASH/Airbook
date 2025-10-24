@@ -95,6 +95,6 @@ export class PromotionService {
 }
 
 // Create instance with repository
-import { prisma } from "../../db/prisma";
+import { prisma } from "../../../db/prisma";
 const promotionRepository = new PromotionRepository(prisma);
 export const promotionService = new PromotionService(promotionRepository);

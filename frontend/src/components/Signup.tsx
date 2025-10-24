@@ -73,7 +73,7 @@ export default function SignupClean(): React.ReactElement {
     setIsSubmitting(true);
 
     try {
-      const result = await register(name, email, pw);
+      const result = await register(name, email, pw, confirm);
 
       if (result.success) {
         // Redirect to home after successful registration

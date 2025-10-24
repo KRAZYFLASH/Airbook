@@ -204,6 +204,11 @@ export function AirportsManager() {
     const [page, setPage] = useState(1);
     const [size, setSize] = useState(10);
 
+    // Enhanced filter states
+    const [filterCountry, setFilterCountry] = useState<string>("all");
+    const [filterCity, setFilterCity] = useState<string>("all");
+    const [filterCodeType, setFilterCodeType] = useState<string>("all"); // all, iata-only, icao-only, both
+
     useEffect(() => {
         loadAirports();
     }, []);
@@ -226,6 +231,7 @@ export function AirportsManager() {
     useEffect(() => {
         let filtered = airports;
 
+        // Basic search filter
         if (searchTerm) {
             filtered = filtered.filter(airport =>
                 airport.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -236,6 +242,7 @@ export function AirportsManager() {
             );
         }
 
+        // Region filter (keep existing)
         if (selectedFilter !== 'all') {
             filtered = filtered.filter(airport => {
                 switch (selectedFilter) {
@@ -251,9 +258,37 @@ export function AirportsManager() {
             });
         }
 
+        // Country filter
+        if (filterCountry !== 'all') {
+            filtered = filtered.filter(airport => airport.city.country.id === filterCountry);
+        }
+
+        // City filter
+        if (filterCity !== 'all') {
+            filtered = filtered.filter(airport => airport.city.id === filterCity);
+        }
+
+        // Code type filter
+        if (filterCodeType !== 'all') {
+            filtered = filtered.filter(airport => {
+                switch (filterCodeType) {
+                    case 'iata-only':
+                        return !!airport.iataCode && !airport.icaoCode;
+                    case 'icao-only':
+                        return !airport.iataCode && !!airport.icaoCode;
+                    case 'both':
+                        return !!airport.iataCode && !!airport.icaoCode;
+                    case 'missing-codes':
+                        return !airport.iataCode && !airport.icaoCode;
+                    default:
+                        return true;
+                }
+            });
+        }
+
         setFilteredAirports(filtered);
         setPage(1);
-    }, [airports, searchTerm, selectedFilter]);
+    }, [airports, searchTerm, selectedFilter, filterCountry, filterCity, filterCodeType]);
 
     const paginatedAirports = useMemo(() => {
         const startIndex = (page - 1) * size;
@@ -340,21 +375,116 @@ export function AirportsManager() {
                         placeholder="Cari bandara, kode, atau kota..."
                         className="input max-w-sm"
                     />
-                    <select
-                        value={selectedFilter}
-                        onChange={(e) => setSelectedFilter(e.target.value as 'all' | 'indonesian' | 'regional' | 'international')}
-                        className="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                    >
-                        <option value="all">All Airports</option>
-                        <option value="indonesian">Indonesian</option>
-                        <option value="regional">Regional</option>
-                        <option value="international">International</option>
-                    </select>
                     <AddButton onClick={handleAddAirport}>
                         Tambah Bandara
                     </AddButton>
                 </div>
             </Header>
+
+            {/* Advanced Filters */}
+            <div className="card p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">🔍 Filter Lanjutan</h3>
+                    <button
+                        onClick={() => {
+                            setSelectedFilter("all");
+                            setFilterCountry("all");
+                            setFilterCity("all");
+                            setFilterCodeType("all");
+                        }}
+                        className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                        Reset Filter
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                    {/* Region Filter (keep existing) */}
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Wilayah</label>
+                        <select
+                            value={selectedFilter}
+                            onChange={(e) => setSelectedFilter(e.target.value as 'all' | 'indonesian' | 'regional' | 'international')}
+                            className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 dark:border-slate-600"
+                        >
+                            <option value="all">Semua Wilayah</option>
+                            <option value="indonesian">🇮🇩 Indonesia</option>
+                            <option value="regional">🌏 Regional</option>
+                            <option value="international">🌍 Internasional</option>
+                        </select>
+                    </div>
+
+                    {/* Country Filter */}
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Negara</label>
+                        <select
+                            value={filterCountry}
+                            onChange={(e) => setFilterCountry(e.target.value)}
+                            className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 dark:border-slate-600"
+                        >
+                            <option value="all">Semua Negara</option>
+                            {Array.from(new Map(airports.map(airport => [airport.city.country.id, airport.city.country])).values())
+                                .sort((a, b) => a.name.localeCompare(b.name))
+                                .map((country) => (
+                                    <option key={country.id} value={country.id}>
+                                        {country.name} ({country.code})
+                                    </option>
+                                ))
+                            }
+                        </select>
+                    </div>
+
+                    {/* City Filter */}
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Kota</label>
+                        <select
+                            value={filterCity}
+                            onChange={(e) => setFilterCity(e.target.value)}
+                            className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 dark:border-slate-600"
+                        >
+                            <option value="all">Semua Kota</option>
+                            {Array.from(new Map(airports
+                                .filter(a => filterCountry === "all" || a.city.country.id === filterCountry)
+                                .map(airport => [airport.city.id, airport.city])).values())
+                                .sort((a, b) => a.name.localeCompare(b.name))
+                                .map((city) => (
+                                    <option key={city.id} value={city.id}>
+                                        {city.name}
+                                    </option>
+                                ))
+                            }
+                        </select>
+                    </div>
+
+                    {/* Code Type Filter */}
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Tipe Kode</label>
+                        <select
+                            value={filterCodeType}
+                            onChange={(e) => setFilterCodeType(e.target.value)}
+                            className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 dark:border-slate-600"
+                        >
+                            <option value="all">Semua Kode</option>
+                            <option value="both">IATA + ICAO</option>
+                            <option value="iata-only">Hanya IATA</option>
+                            <option value="icao-only">Hanya ICAO</option>
+                            <option value="missing-codes">Tanpa Kode</option>
+                        </select>
+                    </div>
+                </div>
+
+                {/* Filter Results Info */}
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <span>
+                        Menampilkan {filteredAirports.length} dari {airports.length} bandara
+                    </span>
+                    {(selectedFilter !== "all" || filterCountry !== "all" || filterCity !== "all" || filterCodeType !== "all") && (
+                        <span className="text-blue-600 font-medium">
+                            Filter aktif
+                        </span>
+                    )}
+                </div>
+            </div>
 
             <div className="card overflow-hidden">
                 <div className="overflow-x-auto custom-scrollbar">

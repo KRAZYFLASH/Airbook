@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { Pagination, Modal } from '../components/Components';
-import { CityIcon } from '../components/Icons';
+
 import { clsx } from '../utils';
 
 // Types
@@ -200,8 +200,7 @@ export function CitiesManager() {
     const filteredCities = cities.filter(city => {
         const matchesSearch =
             city.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            city.country?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            city.timezone.toLowerCase().includes(searchTerm.toLowerCase());
+            city.country?.name.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesStatus =
             filterStatus === 'all' ||
@@ -322,7 +321,9 @@ export function CitiesManager() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
-                        <CityIcon className="text-white w-5 h-5" />
+                        <svg className="text-white w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
                     </div>
                     <div>
                         <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Cities</h1>
@@ -337,36 +338,57 @@ export function CitiesManager() {
                 </button>
             </div>
 
-            {/* Filters */}
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 lg:p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-                    <div className="sm:col-span-2 lg:col-span-1">
+            {/* Advanced Filters */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 lg:p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-slate-700">🔍 Filter Lanjutan</h3>
+                    <button
+                        onClick={() => {
+                            setFilterStatus("all");
+                            setFilterCountry("all");
+                        }}
+                        className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                        Reset Filter
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4">
+                    {/* Search */}
+                    <div className="sm:col-span-2 lg:col-span-2">
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Pencarian</label>
                         <input
                             type="text"
                             className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                            placeholder="Search cities..."
+                            placeholder="Cari kota, negara..."
                             value={searchTerm}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                         />
                     </div>
+
+                    {/* Status Filter */}
                     <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Status</label>
                         <select
-                            className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                            className="w-full px-2 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                             value={filterStatus}
                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterStatus(e.target.value as 'all' | 'active' | 'inactive')}
                         >
-                            <option value="all">All Status</option>
-                            <option value="active">Active Only</option>
-                            <option value="inactive">Inactive Only</option>
+                            <option value="all">Semua Status</option>
+                            <option value="active">✅ Aktif</option>
+                            <option value="inactive">❌ Tidak Aktif</option>
                         </select>
                     </div>
+
+                    {/* Country Filter */}
                     <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Negara</label>
                         <select
-                            className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                            className="w-full px-2 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                             value={filterCountry}
                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterCountry(e.target.value)}
                         >
-                            <option value="all">All Countries</option>
+                            <option value="all">Semua Negara</option>
                             {countries.map(country => (
                                 <option key={country.id} value={country.id}>
                                     {country.name}
@@ -374,19 +396,33 @@ export function CitiesManager() {
                             ))}
                         </select>
                     </div>
-                    <div>
+
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                    <span className="text-xs text-slate-500">
+                        Menampilkan {filteredCities.length} dari {cities.length} kota
+                    </span>
+
+                    <div className="flex items-center gap-4">
+                        {(filterStatus !== "all" || filterCountry !== "all") && (
+                            <span className="text-xs text-blue-600 font-medium">
+                                Filter aktif
+                            </span>
+                        )}
+
                         <select
-                            className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                            className="px-2 py-1 rounded border border-slate-300 text-xs focus:ring-1 focus:ring-blue-500"
                             value={itemsPerPage.toString()}
                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                                 setItemsPerPage(Number(e.target.value));
                                 setCurrentPage(1);
                             }}
                         >
-                            <option value="8">Show: 8</option>
-                            <option value="16">Show: 16</option>
-                            <option value="24">Show: 24</option>
-                            <option value="50">Show: 50</option>
+                            <option value="8">8 per halaman</option>
+                            <option value="16">16 per halaman</option>
+                            <option value="24">24 per halaman</option>
+                            <option value="50">50 per halaman</option>
                         </select>
                     </div>
                 </div>

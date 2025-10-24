@@ -153,11 +153,37 @@ export function AirlinesManager() {
     const [page, setPage] = useState(1);
     const [size, setSize] = useState(10);
 
+    // Enhanced filter states
+    const [filterCountry, setFilterCountry] = useState<string>("all");
+    const [filterCodeType, setFilterCodeType] = useState<string>("all"); // all, iata-only, both-codes
+    const [showActiveOnly, setShowActiveOnly] = useState<boolean>(false);
+
     const filtered = useMemo(() => {
-        return airlines.filter((a) =>
-            [a.code, a.name, a.country?.name].some((x) => x?.toLowerCase().includes(q.toLowerCase()))
-        );
-    }, [airlines, q]);
+        return airlines.filter((a) => {
+            // Basic search filter
+            const matchesSearch = [a.code, a.name, a.country?.name, a.icaoCode].some((x) =>
+                x?.toLowerCase().includes(q.toLowerCase())
+            );
+
+            // Country filter
+            const matchesCountry = filterCountry === "all" || a.country?.name === filterCountry;
+
+            // Code type filter
+            let matchesCodeType = true;
+            if (filterCodeType === "iata-only") {
+                matchesCodeType = !!a.code && !a.icaoCode;
+            } else if (filterCodeType === "both-codes") {
+                matchesCodeType = !!a.code && !!a.icaoCode;
+            } else if (filterCodeType === "icao-only") {
+                matchesCodeType = !!a.icaoCode && !a.code;
+            }
+
+            // Active filter (assuming there's an isActive field, if not we'll skip this)
+            // const matchesActive = !showActiveOnly || a.isActive;
+
+            return matchesSearch && matchesCountry && matchesCodeType;
+        });
+    }, [airlines, q, filterCountry, filterCodeType]);
 
     const paged = useMemo(() => {
         const start = (page - 1) * size;
@@ -224,6 +250,91 @@ export function AirlinesManager() {
                     </AddButton>
                 </div>
             </Header>
+
+            {/* Advanced Filters */}
+            <div className="card p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">🔍 Filter Lanjutan</h3>
+                    <button
+                        onClick={() => {
+                            setFilterCountry("all");
+                            setFilterCodeType("all");
+                            setShowActiveOnly(false);
+                        }}
+                        className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                        Reset Filter
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Country Filter */}
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Negara</label>
+                        <select
+                            value={filterCountry}
+                            onChange={(e) => setFilterCountry(e.target.value)}
+                            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 dark:border-slate-600"
+                        >
+                            <option value="all">Semua Negara</option>
+                            {Array.from(new Map(airlines
+                                .filter(a => a.country)
+                                .map(airline => [airline.country!.name, airline.country!])).values())
+                                .sort((a, b) => a.name.localeCompare(b.name))
+                                .map((country) => (
+                                    <option key={country.name} value={country.name}>
+                                        {country.name}
+                                    </option>
+                                ))
+                            }
+                        </select>
+                    </div>
+
+                    {/* Code Type Filter */}
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Tipe Kode</label>
+                        <select
+                            value={filterCodeType}
+                            onChange={(e) => setFilterCodeType(e.target.value)}
+                            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 dark:border-slate-600"
+                        >
+                            <option value="all">Semua Kode</option>
+                            <option value="iata-only">Hanya IATA</option>
+                            <option value="icao-only">Hanya ICAO</option>
+                            <option value="both-codes">IATA + ICAO</option>
+                        </select>
+                    </div>
+
+                    {/* Active Status Toggle */}
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Status</label>
+                        <div className="flex items-center space-x-2 py-2">
+                            <input
+                                type="checkbox"
+                                id="showActiveOnly"
+                                checked={showActiveOnly}
+                                onChange={(e) => setShowActiveOnly(e.target.checked)}
+                                className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                            />
+                            <label htmlFor="showActiveOnly" className="text-sm text-slate-700 dark:text-slate-300">
+                                Hanya yang aktif
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Filter Results Info */}
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <span>
+                        Menampilkan {filtered.length} dari {airlines.length} maskapai
+                    </span>
+                    {(filterCountry !== "all" || filterCodeType !== "all" || showActiveOnly) && (
+                        <span className="text-blue-600 font-medium">
+                            Filter aktif
+                        </span>
+                    )}
+                </div>
+            </div>
 
             <div className="card overflow-hidden">
                 <div className="overflow-x-auto custom-scrollbar">

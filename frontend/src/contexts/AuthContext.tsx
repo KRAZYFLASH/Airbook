@@ -12,7 +12,7 @@ export interface AuthContextType {
     user: User | null;
     token: string | null;
     login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
-    register: (name: string, email: string, password: string) => Promise<{ success: boolean; message: string }>;
+    register: (name: string, email: string, password: string, confirmPassword: string) => Promise<{ success: boolean; message: string }>;
     logout: () => void;
     isLoading: boolean;
     isAuthenticated: boolean;
@@ -63,7 +63,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
             setIsLoading(true);
 
-            const response = await fetch('http://localhost:3001/api/auth/login', {
+            const response = await fetch('http://localhost:3001/api/auth/user/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -97,16 +97,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     // Register function
-    const register = async (name: string, email: string, password: string): Promise<{ success: boolean; message: string }> => {
+    const register = async (name: string, email: string, password: string, confirmPassword: string): Promise<{ success: boolean; message: string }> => {
         try {
             setIsLoading(true);
 
-            const response = await fetch('http://localhost:3001/api/auth/register', {
+            const response = await fetch('http://localhost:3001/api/auth/user/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ name, email, password }),
+                body: JSON.stringify({ name, email, password, confirmPassword }),
             });
 
             const data = await response.json();

@@ -177,6 +177,10 @@ export function CountriesManager() {
     const [editingCountry, setEditingCountry] = useState<Country | null>(null);
     const [formLoading, setFormLoading] = useState(false);
 
+    // Enhanced filter states
+    const [filterContinent, setFilterContinent] = useState<string>("all");
+    const [filterCurrency, setFilterCurrency] = useState<string>("all");
+
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(8);
@@ -206,14 +210,21 @@ export function CountriesManager() {
         const matchesSearch =
             country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             country.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            country.timezone.toLowerCase().includes(searchTerm.toLowerCase());
+            country.continent.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            country.currency.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesStatus =
             filterStatus === 'all' ||
             (filterStatus === 'active' && country.isActive) ||
             (filterStatus === 'inactive' && !country.isActive);
 
-        return matchesSearch && matchesStatus;
+        const matchesContinent =
+            filterContinent === 'all' || country.continent === filterContinent;
+
+        const matchesCurrency =
+            filterCurrency === 'all' || country.currency === filterCurrency;
+
+        return matchesSearch && matchesStatus && matchesContinent && matchesCurrency;
     });
 
     // Pagination logic
@@ -315,40 +326,117 @@ export function CountriesManager() {
                 </button>
             </div>
 
-            {/* Filters */}
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-                <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="flex-1">
+            {/* Advanced Filters */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-slate-700">🔍 Filter Lanjutan</h3>
+                    <button
+                        onClick={() => {
+                            setFilterStatus("all");
+                            setFilterContinent("all");
+                            setFilterCurrency("all");
+                        }}
+                        className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                        Reset Filter
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                    {/* Search */}
+                    <div className="lg:col-span-2">
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Pencarian</label>
                         <input
                             type="text"
                             className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                            placeholder="Search countries..."
+                            placeholder="Cari negara, kode..."
                             value={searchTerm}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <select
-                        className="px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                        value={filterStatus}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterStatus(e.target.value as 'all' | 'active' | 'inactive')}
-                    >
-                        <option value="all">All Status</option>
-                        <option value="active">Active Only</option>
-                        <option value="inactive">Inactive Only</option>
-                    </select>
-                    <select
-                        className="px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                        value={itemsPerPage.toString()}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                            setItemsPerPage(Number(e.target.value));
-                            setCurrentPage(1);
-                        }}
-                    >
-                        <option value="8">Show: 8</option>
-                        <option value="16">Show: 16</option>
-                        <option value="24">Show: 24</option>
-                        <option value="50">Show: 50</option>
-                    </select>
+
+                    {/* Status Filter */}
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Status</label>
+                        <select
+                            className="w-full px-2 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                            value={filterStatus}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterStatus(e.target.value as 'all' | 'active' | 'inactive')}
+                        >
+                            <option value="all">Semua Status</option>
+                            <option value="active">✅ Aktif</option>
+                            <option value="inactive">❌ Tidak Aktif</option>
+                        </select>
+                    </div>
+
+                    {/* Continent Filter */}
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Benua</label>
+                        <select
+                            value={filterContinent}
+                            onChange={(e) => setFilterContinent(e.target.value)}
+                            className="w-full px-2 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                        >
+                            <option value="all">Semua Benua</option>
+                            {[...new Set(countries.map(c => c.continent).filter(Boolean))]
+                                .sort()
+                                .map((continent) => (
+                                    <option key={continent} value={continent}>
+                                        {continent}
+                                    </option>
+                                ))
+                            }
+                        </select>
+                    </div>
+
+                    {/* Currency Filter */}
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Mata Uang</label>
+                        <select
+                            value={filterCurrency}
+                            onChange={(e) => setFilterCurrency(e.target.value)}
+                            className="w-full px-2 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                        >
+                            <option value="all">Semua Mata Uang</option>
+                            {[...new Set(countries.map(c => c.currency).filter(Boolean))]
+                                .sort()
+                                .map((currency) => (
+                                    <option key={currency} value={currency}>
+                                        {currency}
+                                    </option>
+                                ))
+                            }
+                        </select>
+                    </div>
+
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                    <span className="text-xs text-slate-500">
+                        Menampilkan {filteredCountries.length} dari {countries.length} negara
+                    </span>
+
+                    <div className="flex items-center gap-4">
+                        {(filterStatus !== "all" || filterContinent !== "all" || filterCurrency !== "all") && (
+                            <span className="text-xs text-blue-600 font-medium">
+                                Filter aktif
+                            </span>
+                        )}
+
+                        <select
+                            className="px-2 py-1 rounded border border-slate-300 text-xs focus:ring-1 focus:ring-blue-500"
+                            value={itemsPerPage.toString()}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                                setItemsPerPage(Number(e.target.value));
+                                setCurrentPage(1);
+                            }}
+                        >
+                            <option value="8">8 per halaman</option>
+                            <option value="16">16 per halaman</option>
+                            <option value="24">24 per halaman</option>
+                            <option value="50">50 per halaman</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 

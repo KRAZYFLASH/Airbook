@@ -1,5 +1,5 @@
 import { BookingRepository } from "./booking.repo";
-import { DestinationRepository } from "../../destination/destination.repo";
+import { DestinationRepository } from "../destination/destination.repo";
 import { prisma } from "../../../db/prisma";
 import {
   CreateBookingInput,

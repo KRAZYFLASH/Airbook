@@ -71,7 +71,7 @@ export function useApi<T>(apiCall: () => Promise<T>): UseApiReturn<T> {
 }
 
 // Hook for API mutations (POST, PUT, DELETE)
-interface UseMutationOptions<TData, TVariables> {
+interface UseMutationOptions<TData> {
   onSuccess?: (data: TData) => void;
   onError?: (error: string) => void;
 }
@@ -85,7 +85,7 @@ interface UseMutationReturn<TData, TVariables> {
 
 export function useMutation<TData, TVariables>(
   mutationFn: (variables: TVariables) => Promise<TData>,
-  options?: UseMutationOptions<TData, TVariables>
+  options?: UseMutationOptions<TData>
 ): UseMutationReturn<TData, TVariables> {
   const [state, setState] = useState<{
     loading: boolean;

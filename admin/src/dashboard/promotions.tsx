@@ -23,10 +23,51 @@ export function PromosManager() {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(8);
 
+  // Enhanced filter states
+  const [filterStatus, setFilterStatus] = useState<string>("all"); // active, inactive, expired
+  const [filterDiscountType, setFilterDiscountType] = useState<string>("all"); // PERCENTAGE, FIXED
+  const [filterDateRange, setFilterDateRange] = useState<string>("all"); // active, upcoming, expired
+  const [filterHasCode, setFilterHasCode] = useState<string>("all"); // with-code, without-code
+
   const rows = useMemo(() => {
     const lower = q.toLowerCase();
-    return promos.filter(p => [p.title, p.code, p.description].some(x => x?.toLowerCase().includes(lower)));
-  }, [q, promos]);
+    const now = new Date();
+
+    return promos.filter(p => {
+      // Basic search filter
+      const matchesSearch = [p.title, p.code, p.description].some(x => x?.toLowerCase().includes(lower));
+
+      // Status filter (active/inactive)
+      const matchesStatus = filterStatus === "all" ||
+        (filterStatus === "active" && p.isActive) ||
+        (filterStatus === "inactive" && !p.isActive);
+
+      // Discount type filter
+      const matchesDiscountType = filterDiscountType === "all" || p.discountType === filterDiscountType;
+
+      // Date range filter (active, upcoming, expired)
+      let matchesDateRange = true;
+      if (filterDateRange !== "all") {
+        const startDate = new Date(p.startDate);
+        const endDate = new Date(p.endDate);
+
+        if (filterDateRange === "active") {
+          matchesDateRange = now >= startDate && now <= endDate;
+        } else if (filterDateRange === "upcoming") {
+          matchesDateRange = now < startDate;
+        } else if (filterDateRange === "expired") {
+          matchesDateRange = now > endDate;
+        }
+      }
+
+      // Has code filter
+      const matchesHasCode = filterHasCode === "all" ||
+        (filterHasCode === "with-code" && p.code) ||
+        (filterHasCode === "without-code" && !p.code);
+
+      return matchesSearch && matchesStatus && matchesDiscountType && matchesDateRange && matchesHasCode;
+    });
+  }, [q, promos, filterStatus, filterDiscountType, filterDateRange, filterHasCode]);
 
   const paged = useMemo(() => {
     const start = (page - 1) * size;
@@ -212,6 +253,95 @@ export function PromosManager() {
           </AddButton>
         </div>
       </Header>
+
+      {/* Advanced Filters */}
+      <div className="card p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">🔍 Filter Lanjutan</h3>
+          <button
+            onClick={() => {
+              setFilterStatus("all");
+              setFilterDiscountType("all");
+              setFilterDateRange("all");
+              setFilterHasCode("all");
+            }}
+            className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+          >
+            Reset Filter
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Status Filter */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Status</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 dark:border-slate-600"
+            >
+              <option value="all">Semua Status</option>
+              <option value="active">✅ Aktif</option>
+              <option value="inactive">❌ Tidak Aktif</option>
+            </select>
+          </div>
+
+          {/* Discount Type Filter */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Tipe Diskon</label>
+            <select
+              value={filterDiscountType}
+              onChange={(e) => setFilterDiscountType(e.target.value)}
+              className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 dark:border-slate-600"
+            >
+              <option value="all">Semua Tipe</option>
+              <option value="PERCENTAGE">📊 Persentase</option>
+              <option value="FIXED">💰 Nominal Tetap</option>
+            </select>
+          </div>
+
+          {/* Date Range Filter */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Periode</label>
+            <select
+              value={filterDateRange}
+              onChange={(e) => setFilterDateRange(e.target.value)}
+              className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 dark:border-slate-600"
+            >
+              <option value="all">Semua Periode</option>
+              <option value="active">🟢 Sedang Berlangsung</option>
+              <option value="upcoming">🔵 Akan Datang</option>
+              <option value="expired">🔴 Berakhir</option>
+            </select>
+          </div>
+
+          {/* Has Code Filter */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Kode Promo</label>
+            <select
+              value={filterHasCode}
+              onChange={(e) => setFilterHasCode(e.target.value)}
+              className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 dark:border-slate-600"
+            >
+              <option value="all">Semua</option>
+              <option value="with-code">🏷️ Dengan Kode</option>
+              <option value="without-code">📢 Tanpa Kode</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Filter Results Info */}
+        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-slate-700">
+          <span>
+            Menampilkan {rows.length} dari {promos.length} promosi
+          </span>
+          {(filterStatus !== "all" || filterDiscountType !== "all" || filterDateRange !== "all" || filterHasCode !== "all") && (
+            <span className="text-blue-600 font-medium">
+              Filter aktif
+            </span>
+          )}
+        </div>
+      </div>
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto custom-scrollbar">

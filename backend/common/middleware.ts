@@ -2,18 +2,9 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { env } from "../config/env";
 import { PrismaClient } from "@prisma/client";
+import "./types/auth.types"; // Import global type extensions
 
 const prisma = new PrismaClient();
-
-// Extend Request interface to include user
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    name: string;
-    role: string;
-  };
-}
 
 // Request logging middleware
 export const requestLogger = (
@@ -67,7 +58,7 @@ export const asyncHandler = (fn: Function) => {
 
 // Authentication middleware
 export const authMiddleware = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -91,9 +82,10 @@ export const authMiddleware = async (
     try {
       const decoded = jwt.verify(token, env.JWT_SECRET) as any;
 
-      // Get user from database
+      // Get user from database using userId from token
+      const userId = decoded.userId || decoded.id; // Support both old and new token formats
       const user = await prisma.user.findUnique({
-        where: { id: decoded.id },
+        where: { id: userId },
         select: {
           id: true,
           email: true,
@@ -119,12 +111,12 @@ export const authMiddleware = async (
         return;
       }
 
-      // Add user to request
+      // Add user to request with new structure
       req.user = {
-        id: user.id,
+        userId: user.id,
         email: user.email,
-        name: user.name,
         role: user.role,
+        permissions: decoded.permissions || [], // Get permissions from token
       };
 
       next();
@@ -145,7 +137,7 @@ export const authMiddleware = async (
 
 // Optional authentication middleware (doesn't fail if no token)
 export const optionalAuthMiddleware = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -164,9 +156,10 @@ export const optionalAuthMiddleware = async (
 
     try {
       const decoded = jwt.verify(token, env.JWT_SECRET) as any;
+      const userId = decoded.userId || decoded.id;
 
       const user = await prisma.user.findUnique({
-        where: { id: decoded.id },
+        where: { id: userId },
         select: {
           id: true,
           email: true,
@@ -178,10 +171,10 @@ export const optionalAuthMiddleware = async (
 
       if (user && user.isActive) {
         req.user = {
-          id: user.id,
+          userId: user.id,
           email: user.email,
-          name: user.name,
           role: user.role,
+          permissions: decoded.permissions || [],
         };
       }
     } catch (tokenError) {
@@ -197,7 +190,7 @@ export const optionalAuthMiddleware = async (
 
 // Admin only middleware
 export const adminOnlyMiddleware = (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): void => {
@@ -219,6 +212,3 @@ export const adminOnlyMiddleware = (
 
   next();
 };
-
-// Export the AuthenticatedRequest type for use in other files
-export type { AuthenticatedRequest };

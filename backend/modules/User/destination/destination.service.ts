@@ -2,7 +2,7 @@ import { DestinationRepository } from "./destination.repo";
 import {
   CsvImportService,
   ProcessedAirportData,
-} from "../../services/import/csv.service";
+} from "../../../services/import/csv.service";
 import {
   CreateDestinationInput,
   UpdateDestinationInput,
@@ -25,19 +25,21 @@ export class DestinationService {
       const airports = await this.csvImport.searchAirports(query, 20);
 
       // Transform to our destination format (legacy format for backward compatibility)
-      const destinations: LegacyDestination[] = airports.map((airport) => ({
-        id: airport.code,
-        name: airport.name,
-        city: airport.city,
-        country: airport.country,
-        airport: airport.airport,
-        code: airport.code,
-        description: airport.description,
-        imageUrl: airport.imageUrl,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }));
+      const destinations: LegacyDestination[] = airports.map(
+        (airport: ProcessedAirportData) => ({
+          id: airport.code,
+          name: airport.name,
+          city: airport.city,
+          country: airport.country,
+          airport: airport.airport,
+          code: airport.code,
+          description: airport.description,
+          imageUrl: airport.imageUrl,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+      );
 
       return {
         success: true,
@@ -57,19 +59,21 @@ export class DestinationService {
     try {
       const airports = await this.csvImport.getIndonesianAirports(30);
 
-      const destinations: LegacyDestination[] = airports.map((airport) => ({
-        id: airport.code,
-        name: airport.name,
-        city: airport.city,
-        country: airport.country,
-        airport: airport.airport,
-        code: airport.code,
-        description: airport.description,
-        imageUrl: airport.imageUrl,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }));
+      const destinations: LegacyDestination[] = airports.map(
+        (airport: ProcessedAirportData) => ({
+          id: airport.code,
+          name: airport.name,
+          city: airport.city,
+          country: airport.country,
+          airport: airport.airport,
+          code: airport.code,
+          description: airport.description,
+          imageUrl: airport.imageUrl,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+      );
 
       return {
         success: true,
